@@ -3,126 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pokemon Game Start</title>
-    <link rel="stylesheet" href="ash.css">
+    <title>Pokemon Game - Login</title>
+    <link rel="stylesheet" href="login.css">
 </head>
 <body>
-    <canvas id="fire-fx"></canvas>
-    <div class="container">
-        <header>
-            <h1 class="title">PokéBrawl</h1>
-            <div class="pokeball-icon"></div>
-        </header>
+    <!-- Video Background -->
+    <div class="video-background">
+        <video autoplay muted loop id="pokemonVideo">
+            <source src="snaptik_7395798296171744554_v2.mp4" type="video/mp4">
         
-        <main class="main-content">
-            <div class="game-info">
-                <p>Embark on an epic journey to become the ultimate Pokemon Master!</p>
-                <p>Catch, train, and battle with your favorite Pokemon.</p>
-            </div>
-            
-            <div class="action-buttons">
-                <button id="start-btn" class="btn btn-primary">Start Game</button>
-                <button id="settings-btn" class="btn btn-secondary">Settings</button>
-            </div>
-            
-            <div class="pokemon-display">
-                <img class="pokemon" src="pikachu.png" id="pokemon-1"></img>
-                <img class="pokemon" src="charmander.png" id="pokemon-2"></img>
-                <img class="pokemon" src="bulb.png" id="pokemon-3"></img>
-            </div>
-        </main>
-        
-        <footer>
-            <p>© 2025 PokemonBrawl  </footer>
+        </video>
+        <div class="video-overlay"></div>
     </div>
-    
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Game Settings</h2>
-            <div class="settings-options">
-                <div class="setting">
-                    <label for="volume">Music Volume</label>
-                    <input type="range" id="volume" min="0" max="100" value="80">
-                </div>
-                <div class="setting">
-                    <label for="difficulty">Difficulty</label>
-                    <select id="difficulty">
-                        <option value="easy">Easy</option>
-                        <option value="medium" selected>Medium</option>
-                        <option value="hard">Hard</option>
-                    </select>
-                </div>
-                <div class="setting">
-                    <label>
-                        <input type="checkbox" id="sound-effects" checked>
-                        Sound Effects
-                    </label>
+
+    <!-- Login Container -->
+    <div class="login-container">
+        <div class="pokemon-header">
+            <div class="pokemon-logo">
+                <h1>PokeBrawl<span class="highlight">Battle</span></h1>
+            </div>
+            <p class="tagline">Enter the World of Pokemon Battles</p>
+        </div>
+        
+        <div class="login-card">
+            <div class="card-header">
+                <h2>Welcome Trainer!</h2>
+                <p>Connect your MetaMask to begin your journey</p>
+            </div>
+            
+            <div class="login-content">
+                <button id="metamaskLogin" class="login-btn">
+                    <span class="btn-icon">🦊</span>
+                    <span class="btn-text">Connect MetaMask</span>
+                    <span class="btn-arrow">→</span>
+                </button>
+                
+                <div id="loginStatus" class="status-message hidden"></div>
+                
+                <div class="features-list">
+                    <div class="feature-item">
+                        <span class="feature-icon">🎮</span>
+                        <span>Play & Battle</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">💰</span>
+                        <span>Earn Rewards</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🔒</span>
+                        <span>Secure Login</span>
+                    </div>
                 </div>
             </div>
-            <button id="save-settings" class="btn btn-primary">Save Settings</button>
+            
+            <div class="info-box">
+                <div class="info-icon">💡</div>
+                <div class="info-content">
+                    <h3>New to MetaMask?</h3>
+                    <p>Install the browser extension from metamask.io to start playing</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Join millions of trainers in epic Pokemon battles!</p>
         </div>
     </div>
-    
-    <script src="ash.js"></script>
-    <script>
-        const canvas = document.getElementById("fire-fx");
-const ctx = canvas.getContext("2d");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
 
-const flames = [];
-const flameCount = 60;
-
-// generate glowing fire particles
-for (let i = 0; i < flameCount; i++) {
-  flames.push({
-    x: Math.random() * canvas.width,
-    y: canvas.height - Math.random() * 100,
-    radius: Math.random() * 30 + 10,
-    alpha: Math.random() * 0.4 + 0.3,
-    speed: Math.random() * 0.5 + 0.2,
-    hue: 30 + Math.random() * 30 // orange/yellow range
-  });
-}
-
-function animateFire() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  flames.forEach(f => {
-    // draw glowing circle
-    const gradient = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.radius);
-    gradient.addColorStop(0, `hsla(${f.hue}, 100%, 60%, ${f.alpha})`);
-    gradient.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // particle motion
-    f.y -= f.speed;
-    f.x += (Math.random() - 0.5) * 0.5; // small horizontal wobble
-    f.alpha -= 0.003;
-
-    // recycle particles when they fade
-    if (f.alpha <= 0) {
-      f.x = Math.random() * canvas.width;
-      f.y = canvas.height - Math.random() * 80;
-      f.radius = Math.random() * 25 + 10;
-      f.alpha = Math.random() * 0.5 + 0.3;
-    }
-  });
-
-  requestAnimationFrame(animateFire);
-}
-animateFire();
-
-window.addEventListener("resize", () => {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-});
-
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <script src="login.js"></script>
 </body>
 </html>
