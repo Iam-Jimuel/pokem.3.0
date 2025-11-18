@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokemon Battle Arena</title>
+    <link rel="stylesheet" href="battle.css">
+</head>
+<body>
+    <!-- Battle Background -->
+    <div class="battle-background">
+        <div class="battle-effects"></div>
+    </div>
+
+    <!-- Battle UI Container -->
+    <div class="battle-container">
+        <!-- Health Bars -->
+        <div class="health-bars">
+            <div class="health-bar player-health">
+                <div class="health-info">
+                    <span class="pokemon-name" id="player-pokemon-name">Pikachu</span>
+                    <span class="health-text" id="player-health-text">100/100</span>
+                </div>
+                <div class="health-bar-outer">
+                    <div class="health-bar-inner" id="player-health-bar"></div>
+                </div>
+            </div>
+            
+            <div class="health-bar opponent-health">
+                <div class="health-info">
+                    <span class="pokemon-name" id="opponent-pokemon-name">Charizard</span>
+                    <span class="health-text" id="opponent-health-text">100/100</span>
+                </div>
+                <div class="health-bar-outer">
+                    <div class="health-bar-inner" id="opponent-health-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pokemon in Battle -->
+        <div class="battle-field">
+            <div class="pokemon player-pokemon">
+                <div class="pokemon-sprite" id="player-pokemon-sprite"></div>
+                <div class="battle-status" id="player-status"></div>
+            </div>
+            
+            <div class="pokemon opponent-pokemon">
+                <div class="pokemon-sprite" id="opponent-pokemon-sprite"></div>
+                <div class="battle-status" id="opponent-status"></div>
+            </div>
+        </div>
+
+        <!-- Battle Log -->
+        <div class="battle-log" id="battle-log">
+            <div class="log-message">A wild Pokemon appeared!</div>
+        </div>
+
+        <!-- Battle Controls -->
+        <div class="battle-controls" id="battle-controls">
+            <div class="attack-buttons">
+                <button class="attack-btn normal-attack" data-type="normal">
+                    <span class="attack-icon">⚔️</span>
+                    <span class="attack-name">Quick Attack</span>
+                </button>
+                <button class="attack-btn special-attack" data-type="special">
+                    <span class="attack-icon">💥</span>
+                    <span class="attack-name">Super Attack</span>
+                </button>
+                <button class="attack-btn critical-attack" data-type="critical">
+                    <span class="attack-icon">💀</span>
+                    <span class="attack-name">Combo</span>
+                </button>
+            </div>
+            <div class="battle-actions">
+                <button class="action-btn" id="flee-btn">🏃 Flee</button>
+                <button class="action-btn" id="items-btn">🎒 Items</button>
+            </div>
+        </div>
+
+        <!-- Battle Results Modal -->
+        <div class="battle-modal" id="battle-modal">
+            <div class="modal-content">
+                <div class="result-header" id="result-header">
+                    <h2>Battle Result</h2>
+                </div>
+                <div class="result-body">
+                    <div class="result-message" id="result-message"></div>
+                    <div class="rewards" id="rewards"></div>
+                    <div class="result-actions">
+                        <button class="result-btn rematch-btn" id="rematch-btn">🔄 Rematch</button>
+                        <button class="result-btn menu-btn" id="menu-btn">🏠 Main Menu</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trainer Info -->
+        <div class="trainer-info">
+            <div class="trainer player-trainer">
+                <img src="Screenshot 2025-10-10 090142.png" alt="Player" class="trainer-avatar" id="player-avatar">
+                <span class="trainer-name" id="player-name">Player</span>
+            </div>
+            <div class="battle-vs">VS</div>
+            <div class="trainer opponent-trainer">
+                <img src="Media (1).jpg" alt="Opponent" class="trainer-avatar">
+                <span class="trainer-name">Khalil & Leela</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Elements -->
+    <audio id="battle-music" loop>
+        <source src="assets/audio/battle-music.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="attack-sound">
+        <source src="assets/audio/attack.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="win-sound">
+        <source src="assets/audio/victory.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="lose-sound">
+        <source src="assets/audio/defeat.mp3" type="audio/mpeg">
+    </audio>
+
+    <script src="battle.js"></script>
+</body>
+</html>

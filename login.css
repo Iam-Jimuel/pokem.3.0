@@ -1,0 +1,357 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Video Background */
+.video-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+}
+
+#pokemonVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: 
+         brightness(0.6) 
+         saturate(1.9) 
+         contrast(1.7);
+}
+
+.video-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: -1;
+}
+
+/* Login Container */
+.login-container {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Pokemon Header */
+.pokemon-header {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: fadeInDown 1s ease-out;
+}
+
+.pokemon-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+
+.pokemon-logo h1 {
+    font-size: 3em;
+    color: white;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+    font-weight: 700;
+}
+
+
+
+.tagline {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.2em;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
+    font-weight: 300;
+}
+
+/* Login Card */
+.login-card {
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    max-width: 450px;
+    width: 100%;
+    animation: slideUp 1s ease-out;
+}
+
+.card-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.card-header h2 {
+    color: #ffffff;
+    font-size: 1.8em;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.card-header p {
+    color: #7f8c8d;
+    font-size: 1em;
+}
+
+/* Login Button */
+.login-content {
+    margin-bottom: 30px;
+}
+
+.login-btn {
+    background: linear-gradient(135deg, #f6851b, #e2761b, #cd6116);
+    color: white;
+    border: none;
+    padding: 18px 30px;
+    font-size: 1.1em;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    font-weight: 600;
+    box-shadow: 0 8px 25px rgba(246, 133, 27, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.login-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.login-btn:hover::before {
+    left: 100%;
+}
+
+.login-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(246, 133, 27, 0.4);
+}
+
+.login-btn:active {
+    transform: translateY(-1px);
+}
+
+.btn-icon {
+    font-size: 1.3em;
+}
+
+.btn-text {
+    flex: 1;
+    text-align: center;
+}
+
+.btn-arrow {
+    font-size: 1.2em;
+    opacity: 0.8;
+}
+
+/* Status Message */
+.status-message {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 10px;
+    font-weight: 600;
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+}
+
+.status-success {
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+    color: #155724;
+    border: 1px solid #b1dfbb;
+}
+
+.status-error {
+    background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+    color: #721c24;
+    border: 1px solid #f1b0b7;
+}
+
+.status-info {
+    background: linear-gradient(135deg, #cce7ff, #b3d7ff);
+    color: #004085;
+    border: 1px solid #9ec5fe;
+}
+
+/* Features List */
+.features-list {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    gap: 15px;
+}
+
+.feature-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: #2c3e50;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.feature-icon {
+    font-size: 1.5em;
+    opacity: 0.8;
+}
+
+/* Info Box */
+.info-box {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-left: 4px solid #f6851b;
+}
+
+.info-icon {
+    font-size: 1.5em;
+    opacity: 0.7;
+}
+
+.info-content h3 {
+    color: #2c3e50;
+    margin-bottom: 5px;
+    font-size: 1em;
+}
+
+.info-content p {
+    color: #7f8c8d;
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+/* Footer */
+.footer {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.footer p {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9em;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+/* Animations */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Utility Classes */
+.hidden {
+    display: none;
+}
+
+.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.loading .btn-text {
+    animation: pulse 1s infinite;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .login-container {
+        padding: 15px;
+    }
+    
+    .pokemon-logo {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .pokemon-logo h1 {
+        font-size: 2.5em;
+    }
+    
+    .login-card {
+        padding: 30px 20px;
+    }
+    
+    .features-list {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .feature-item {
+        flex-direction: row;
+        justify-content: center;
+    }
+}

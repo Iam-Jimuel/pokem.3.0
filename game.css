@@ -1,0 +1,744 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: 
+        linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.8)), url('charizz.jpg');
+    color: #333;
+    min-height: 100vh;
+    padding: 8px;
+    background-size: cover;
+    overflow-x: hidden;
+}
+#fire-fx {
+  position: fixed; /* Use fixed instead of absolute for full viewport coverage */
+  top: 0;
+  left: 0;
+  width: 100vw; /* Use viewport width */
+  height: 100vh; /* Use viewport height */
+  pointer-events: none;
+  background: transparent;
+  mix-blend-mode: screen;
+  z-index: -1; /* Place behind all content */
+}
+
+/* Optional: Add actual fire effect */
+#fire-fx::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(ellipse at 20% 80%, rgba(255, 80, 0, 0.6) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(255, 120, 0, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 40% 40%, rgba(255, 60, 0, 0.5) 0%, transparent 50%);
+  animation: fire-pulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes fire-pulse {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.05);
+    filter: hue-rotate(10deg);
+  }
+}
+
+.container {
+    max-width: 2000px;
+    width: 90%;
+    margin-top: 50px;
+    margin-bottom: 50px;
+    margin-left: 100px;
+    background: 
+        linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.9)), url('charizz.jpg');
+    color: #333;
+    background-size: cover;
+    margin-right: 300px;
+    border-radius: 10px;
+    overflow: hidden;
+    min-height: 80vh;
+    height: 750px;
+    padding: 60px 60px;
+    border: 4px solid #ff9900;
+    box-shadow: 
+        0 0 5px #ff9900,
+        0 0 10px #ff9900,
+        0 0 15px #ff9900,
+        0 0 20px #ff7402,
+        inset 0 0 5px #ffa600;
+}
+
+/* Header Styles */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: 
+        linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+        url('pokbg.jpg');
+        border-radius: 8px;
+        border: 4px solid #ff9900;
+    background-size: cover;
+    border-bottom: 4px solid #ff9900;
+    width: 800px;
+    margin-left: -30px;
+    height: 150px;
+    margin-top: -30px;
+}   
+.pokeball1{
+    margin-right: -700px;
+}
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 30px;
+    border-radius: 5px;
+}
+
+#player-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 5px;
+    border: 3px solid #ff9900;
+    background: rgb(255, 255, 255);
+    object-fit: cover;
+    margin-top: 10px;
+    padding: 10px;
+}
+
+.avatar-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: 100%;
+}
+
+.rect-btn {
+    padding: 5px 12px;
+    background: #232323;
+    color: #fff;
+    border: 2px solid #ff9900;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-align: center;
+    width: 100%;
+    display: flex;
+    margin-top: 8px;
+    font-size: 0.75rem;
+}
+
+.rect-btn.primary {
+    background: linear-gradient(135deg, #ff6600, #ffcc00);
+}
+
+.rect-btn:hover {
+    background: #2547a3;
+    transform: translateY(-1px);
+}
+
+.rect-btn.primary:hover {
+    background: linear-gradient(135deg, #e55a00, #e6b800);
+}
+
+.player-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-left: -20px;
+}
+
+.player-details h2 {
+    color: white;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.3);
+    font-size: 1.1rem;
+    margin-top: 30px;
+    background-color: #ffb700;
+    padding: 4px 9px 4px 9px;
+    border-radius: 5px;
+    border: 3px solid white;
+}
+
+.coin-balance {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.9);
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.8rem;
+    border: 3px solid #ff9900;
+    margin-top: 20px;
+}
+
+.coin-icon {
+    font-size: 0.9rem;
+}
+
+.nav-menu {
+    display: flex;
+    gap: 8px;
+    margin-right: -90px;
+}
+
+.nav-btn {
+    padding: 20px;
+    background: #ff9900;
+    border: 3px solid #000;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    color: black;
+    transition: all 0.3s ease;
+    font-size: 0.75rem;
+}
+#save-game-btn {
+    background-color: #ff9d00;
+}
+.nav-btn:hover {
+    background: transparent;
+    color: #fffdfd;
+    transform: translateY(-1px);
+}
+
+/* Main Content */
+.main-content {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 15px;
+    padding: 40px;
+    min-height: 400px;
+    background: 
+        linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.9)), url('charizz.jpg');
+    color: #333;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+.content-left, .content-right {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Pokemon Selection */
+.pokemon-selection {
+    text-align: center;
+    padding: 12px;
+    background-color: rgb(0, 0, 0);
+    border-radius: 8px;
+    border: 4px solid #ff9900;
+    width: 250px;
+    height: 290px;
+    margin-left: -70px;
+}
+
+.pokemon-selection h2 {
+    color: #ff6600;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+.selection-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.control-btn {
+    background: #3366cc;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 35px;
+    height: 30px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.control-btn:hover {
+    background: #2547a3;
+    transform: scale(1.05);
+}
+
+.selected-pokemon-display {
+    flex: 1;
+    max-width: 200px;
+    margin: 0 auto;
+}
+
+.pokemon-gif {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 8px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    image-rendering: pixelated;
+}
+
+#selected-pokemon-name {
+    color: #3366cc;
+    margin-bottom: 4px;
+    font-size: 1rem;
+}
+
+#selected-pokemon-type span, #selected-pokemon-stats span {
+    font-weight: 600;
+    color: #ff6600;
+}
+
+#selected-pokemon-type, #selected-pokemon-stats {
+    color: white;
+    font-size: 0.75rem;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.action-btn {
+    padding: 10px 16px;
+    font-size: 0.8rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.action-btn.primary {
+    background: linear-gradient(135deg, #ff6600, #ffcc00);
+    color: white;
+}
+
+.action-btn.battle {
+    background: linear-gradient(135deg, #c50000, #680505);
+    color: white;
+    font-size: 0.9rem;
+    padding: 12px 20px;
+    margin-left: -32px;
+}
+#change-avatar-btn {
+    background-color: #000;
+    border: 3px solid #ff9900;
+}
+.action-btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Pokemon Collection */
+.pokemon-collection {
+    background: 
+        linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.9)), url('charizz.jpg');
+    color: #333;
+    background-repeat: no-repeat;
+    background-size: cover;
+    border-radius: 8px;
+    padding: 12px;
+    border: 5px solid #ff9900;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 1200px;
+    margin-left: 40px;
+}
+
+.pokemon-collection h3 {
+    color: #ffffff;
+    margin-bottom: 8px;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.collection-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding: 0 4px;
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.75rem;
+}
+
+.pokemon-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 8px;
+    overflow-y: auto;
+    padding: 4px;
+    flex: 1;
+}
+
+.pokemon-card {
+    background: linear-gradient(135deg, #000000, #000000);
+    border-radius: 5px;
+    padding: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 3px solid #ff9900;
+}
+
+.pokemon-card:hover {
+    transform: translateY(-1px);
+    border-color: #ff6600;
+    background: #1c36fd;
+}
+
+.pokemon-card.selected {
+    border-color: #ff9d00;
+    background: #ff4000;
+    color: #000;
+}
+
+.pokemon-card .pokemon-gif {
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 4px;
+}
+
+.pokemon-card h4 {
+    font-size: 0.7rem;
+    color: #ffffff;
+    margin-bottom: 2px;
+}
+
+.pokemon-card .pokemon-type {
+    font-size: 0.65rem;
+    color: #ffffff;
+    margin-bottom: 2px;
+}
+
+.pokemon-card .pokemon-price {
+    font-size: 0.65rem;
+    color: #ff6600;
+    font-weight: 600;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background-color: black;
+    margin: 12% auto;
+    padding: 15px;
+    border-radius: 8px;
+    width: 75%;
+    max-width: 350px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    position: relative;
+    animation: slideIn 0.3s;
+    border: 3px solid #ff9900;
+}
+
+.modal-content.large {
+    max-width: 700px;
+    margin: 6% auto;
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #aaa;
+}
+
+.close:hover {
+    color: #000;
+}
+
+.modal-content h2 {
+    margin-bottom: 10px;
+    color: #ff6600;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+#new-name-input {
+    width: 100%;
+    padding: 6px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+/* Marketplace */
+.marketplace-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
+.search-box {
+    flex: 1;
+}
+
+#pokemon-search {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid #ff9100;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.filter-controls select {
+    padding: 5px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    background: white;
+    cursor: pointer;
+}
+.logopok {
+    height: 100px;
+    width: auto;
+    padding: 20px;
+}
+.marketplace-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.market-item {
+    background: #232626;
+    border-radius: 5px;
+    padding: 10px;
+    text-align: center;
+    border: 2px solid #ffcc00;
+    transition: all 0.3s ease;
+}
+
+.market-item:hover {
+    transform: translateY(-1px);
+}
+
+.market-item.owned {
+    border-color: #3366cc;
+    background: #e6f0ff;
+}
+
+.item-pokemon-gif {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 5px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    image-rendering: pixelated;
+}
+
+.market-item h4 {
+    color: #3366cc;
+    margin-bottom: 2px;
+    font-size: 0.75rem;
+}
+
+.market-item .item-type {
+    color: #666;
+    margin-bottom: 4px;
+    font-size: 0.7rem;
+}
+
+.item-price {
+    color: #ff6600;
+    font-weight: 600;
+    font-size: 0.8rem;
+    margin-bottom: 6px;
+}
+
+.buy-btn {
+    background: #3366cc;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    width: 100%;
+    font-size: 0.75rem;
+}
+
+.buy-btn:hover:not(:disabled) {
+    background: #2547a3;
+}
+
+.buy-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.buy-btn.owned {
+    background: #28a745;
+}
+
+.marketplace-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+}
+
+/* MetaMask Wallet Styles */
+.metamask-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.wallp {
+    display: none;
+}
+
+.wallet-btn {
+    padding: 5px 10px;
+    background: linear-gradient(135deg, #f6851b, #f6851b);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 0.75rem;
+    margin-top: -120px;
+    padding: 10px;
+}
+
+.wallet-btn:hover {
+    background: linear-gradient(135deg, #e5760b, #e5760b);
+}
+
+.wallet-btn.connected {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+}
+
+.wallet-info {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    text-align: center;
+}
+
+#wallet-address {
+    display: block;
+    font-family: monospace;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+#wallet-balance {
+    display: block;
+    color: #f6851b;
+    font-weight: 600;
+}
+
+.page-btn {
+    padding: 4px 8px;
+    background: #3366cc;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.75rem;
+}
+
+.page-btn:hover:not(:disabled) {
+    background: #2547a3;
+}
+
+.page-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #3366cc;
+    border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #2547a3;
+}
