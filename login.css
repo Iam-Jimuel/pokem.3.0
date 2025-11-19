@@ -355,3 +355,80 @@ body {
         justify-content: center;
     }
 }
+/* Add to your existing CSS */
+.blockchain-ui {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.wallet-connect {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.wallet-info {
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+.btn-wallet {
+    background: linear-gradient(45deg, #f6851b, #e2761b);
+    color: white;
+    border: none;
+}
+
+.btn-wallet:disabled {
+    background: #666;
+    cursor: not-allowed;
+}
+
+.btn-mint {
+    background: linear-gradient(45deg, #9b59b6, #8e44ad);
+    color: white;
+    border: none;
+}
+
+.btn-marketplace {
+    background: linear-gradient(45deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+}
+
+.marketplace-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+}
+
+.blockchain-listing {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.listing-pokemon .pokemon-gif {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 10px;
+}
+
+.seller {
+    font-size: 12px;
+    color: #ccc;
+    margin: 5px 0;
+}
+
+.loading, .error {
+    text-align: center;
+    padding: 20px;
+    color: #ccc;
+}

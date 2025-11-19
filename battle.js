@@ -130,7 +130,7 @@ class PokemonBattle {
         });
 
         document.getElementById('menu-btn').addEventListener('click', () => {
-            window.location.href = 'game.html';
+            window.location.href = 'index.html';
         });
     }
 
@@ -385,7 +385,7 @@ class PokemonBattle {
         this.disableControls();
         
         setTimeout(() => {
-            window.location.href = 'game.html';
+            window.location.href = 'index.html';
         }, 2000);
     }
 

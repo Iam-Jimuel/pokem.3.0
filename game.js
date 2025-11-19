@@ -166,7 +166,6 @@ class NameChangeManager {
                 saveGameState();
                 
                 // Show confirmation
-                this.showNotification(`Name changed to ${newName}`, 'success');
                 
                 this.closeNameModal();
             } else {
@@ -224,8 +223,11 @@ class NameChangeManager {
     }
 }
 
+
+
+
 // Initialize name change manager
-let nameChangeManager;
+let nameChangeManager = document.getElementById('new-name-input');
 
 // Initialize the game
 function initGame() {
