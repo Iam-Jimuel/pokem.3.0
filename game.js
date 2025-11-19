@@ -311,7 +311,50 @@ function populatePokemonGrid() {
         }
     });
 }
+// Add to your game.js - Marketplace Web3 integration
 
+function setupMarketplaceWeb3() {
+    const connectBtn = document.getElementById('connect-wallet-btn');
+    if (connectBtn) {
+        connectBtn.addEventListener('click', () => {
+            window.pokemonWeb3.connectWallet();
+        });
+    }
+    
+    // Update marketplace items to include buy buttons
+    updateMarketplaceWeb3UI();
+}
+
+function updateMarketplaceWeb3UI() {
+    // This would be called when loading marketplace items
+    const marketplaceItems = document.querySelectorAll('.marketplace-item');
+    
+    marketplaceItems.forEach(item => {
+        const pokemonId = item.dataset.pokemonId;
+        const price = item.dataset.price;
+        
+        // Add Web3 buy button
+        const buyBtn = document.createElement('button');
+        buyBtn.className = 'buy-button';
+        buyBtn.textContent = `Buy for ${price} ETH`;
+        buyBtn.onclick = () => {
+            window.pokemonWeb3.buyPokemon(pokemonId, price);
+        };
+        
+        // Find the action container and add buy button
+        const actions = item.querySelector('.item-actions');
+        if (actions) {
+            // Remove existing action buttons if any
+            actions.innerHTML = '';
+            actions.appendChild(buyBtn);
+        }
+    });
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    setupMarketplaceWeb3();
+});
 // Set selected Pokemon
 function setSelectedPokemon(index) {
     if (gameState.ownedPokemon.length === 0) return;

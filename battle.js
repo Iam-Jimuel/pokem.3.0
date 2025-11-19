@@ -75,15 +75,50 @@ class PokemonBattle {
     getPokemonData(id) {
         const pokemonList = [
             { id: 1, name: "Bulbasaur", type: "Grass/Poison", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/bulbasaur.gif" },
-            { id: 2, name: "Ivysaur", type: "Grass/Poison", price: 800, gif: "https://projectpokemon.org/images/normal-sprite/ivysaur.gif" },
-            { id: 3, name: "Venusaur", type: "Grass/Poison", price: 1200, gif: "https://projectpokemon.org/images/normal-sprite/venusaur.gif" },
-            { id: 4, name: "Charmander", type: "Fire", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/charmander.gif" },
-            { id: 5, name: "Charmeleon", type: "Fire", price: 800, gif: "https://projectpokemon.org/images/normal-sprite/charmeleon.gif" },
-            { id: 6, name: "Charizard", type: "Fire/Flying", price: 1200, gif: "https://projectpokemon.org/images/normal-sprite/charizard.gif" },
-            { id: 7, name: "Squirtle", type: "Water", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/squirtle.gif" },
-            { id: 8, name: "Wartortle", type: "Water", price: 800, gif: "https://projectpokemon.org/images/normal-sprite/wartortle.gif" },
-            { id: 9, name: "Blastoise", type: "Water", price: 1200, gif: "https://projectpokemon.org/images/normal-sprite/blastoise.gif" },
-            { id: 25, name: "Pikachu", type: "Electric", price: 800, gif: "https://projectpokemon.org/images/normal-sprite/pikachu.gif" }
+    { id: 2, name: "Ivysaur", type: "Grass/Poison", price: 800, gif: "https://projectpokemon.org/images/normal-sprite/ivysaur.gif" },
+    { id: 3, name: "Venusaur", type: "Grass/Poison", price: 1200, gif: "https://projectpokemon.org/images/normal-sprite/venusaur.gif" },
+    { id: 4, name: "Charmander", type: "Fire", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/charmander.gif" },
+    { id: 5, name: "Charmeleon", type: "Fire", price: 800, gif: "https://projectpokemon.org/images/normal-sprite/charmeleon.gif" },
+    { id: 6, name: "Charizard", type: "Fire/Flying", price: 1200, gif: "https://projectpokemon.org/images/normal-sprite/charizard.gif" },
+    { id: 7, name: "Squirtle", type: "Water", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/squirtle.gif" },
+    { id: 8, name: "Wartortle", type: "Water", price: 800, gif: "https://projectpokemon.org/images/normal-sprite/wartortle.gif" },
+    { id: 9, name: "Blastoise", type: "Water", price: 1200, gif: "https://projectpokemon.org/images/normal-sprite/blastoise.gif" },
+    { id: 10, name: "Caterpie", type: "Bug", price: 100, gif: "https://projectpokemon.org/images/normal-sprite/caterpie.gif" },
+    { id: 11, name: "Metapod", type: "Bug", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/metapod.gif" },
+    { id: 12, name: "Butterfree", type: "Bug/Flying", price: 600, gif: "https://projectpokemon.org/images/normal-sprite/butterfree.gif" },
+    { id: 13, name: "Weedle", type: "Bug/Poison", price: 100, gif: "https://projectpokemon.org/images/normal-sprite/weedle.gif" },
+    { id: 14, name: "Kakuna", type: "Bug/Poison", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/kakuna.gif" },
+    { id: 15, name: "Beedrill", type: "Bug/Poison", price: 600, gif: "https://projectpokemon.org/images/normal-sprite/beedrill.gif" },
+    { id: 16, name: "Pidgey", type: "Normal/Flying", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/pidgey.gif" },
+    { id: 17, name: "Pidgeotto", type: "Normal/Flying", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/pidgeotto.gif" },
+    { id: 18, name: "Pidgeot", type: "Normal/Flying", price: 900, gif: "https://projectpokemon.org/images/normal-sprite/pidgeot.gif" },
+    { id: 19, name: "Rattata", type: "Normal", price: 150, gif: "https://projectpokemon.org/images/normal-sprite/rattata.gif" },
+    { id: 20, name: "Raticate", type: "Normal", price: 400, gif: "https://projectpokemon.org/images/normal-sprite/raticate.gif" },
+    { id: 21, name: "Spearow", type: "Normal/Flying", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/spearow.gif" },
+    { id: 22, name: "Fearow", type: "Normal/Flying", price: 600, gif: "https://projectpokemon.org/images/normal-sprite/fearow.gif" },
+    { id: 23, name: "Ekans", type: "Poison", price: 300, gif: "https://projectpokemon.org/images/normal-sprite/ekans.gif" },
+    { id: 24, name: "Arbok", type: "Poison", price: 700, gif: "https://projectpokemon.org/images/normal-sprite/arbok.gif" },
+    { id: 25, name: "Pikachu", type: "Electric", price: 800, gif: "https://projectpokemon.org/images/normal-sprite/pikachu.gif" },
+    { id: 26, name: "Raichu", type: "Electric", price: 1100, gif: "https://projectpokemon.org/images/normal-sprite/raichu.gif" },
+    { id: 27, name: "Sandshrew", type: "Ground", price: 300, gif: "https://projectpokemon.org/images/normal-sprite/sandshrew.gif" },
+    { id: 28, name: "Sandslash", type: "Ground", price: 700, gif: "https://projectpokemon.org/images/normal-sprite/sandslash.gif" },
+    { id: 29, name: "Nidoran♀", type: "Poison", price: 350, gif: "https://projectpokemon.org/home/uploads/monthly_2017_11/large.Animated.gif.f2f8eadc8800f8ef17b706e10f99529e.gif" },
+    { id: 30, name: "Clefairy", type: "Fairy", price: 400, gif: "https://projectpokemon.org/images/normal-sprite/clefairy.gif" },
+    { id: 31, name: "Clefable", type: "Fairy", price: 900, gif: "https://projectpokemon.org/images/normal-sprite/clefable.gif" },
+    { id: 32, name: "Vulpix", type: "Fire", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/vulpix.gif" },
+    { id: 33, name: "Ninetales", type: "Fire", price: 1000, gif: "https://projectpokemon.org/images/normal-sprite/ninetales.gif" },
+    { id: 34, name: "Jigglypuff", type: "Normal/Fairy", price: 400, gif: "https://projectpokemon.org/images/normal-sprite/jigglypuff.gif" },
+    { id: 35, name: "Wigglytuff", type: "Normal/Fairy", price: 900, gif: "https://projectpokemon.org/images/normal-sprite/wigglytuff.gif" },
+    { id: 36, name: "Zubat", type: "Poison/Flying", price: 150, gif: "https://projectpokemon.org/images/normal-sprite/zubat.gif" },
+    { id: 37, name: "Golbat", type: "Poison/Flying", price: 600, gif: "https://projectpokemon.org/images/normal-sprite/golbat.gif" },
+    { id: 38, name: "Oddish", type: "Grass/Poison", price: 250, gif: "https://projectpokemon.org/images/normal-sprite/oddish.gif" },
+    { id: 39, name: "Gloom", type: "Grass/Poison", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/gloom.gif" },
+    { id: 40, name: "Vileplume", type: "Grass/Poison", price: 900, gif: "https://projectpokemon.org/images/normal-sprite/vileplume.gif" },
+    { id: 41, name: "Paras", type: "Bug/Grass", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/paras.gif" },
+    { id: 42, name: "Parasect", type: "Bug/Grass", price: 600, gif: "https://projectpokemon.org/images/normal-sprite/parasect.gif" },
+    { id: 43, name: "Venonat", type: "Bug/Poison", price: 300, gif: "https://projectpokemon.org/images/normal-sprite/venonat.gif" },
+    { id: 44, name: "Venomoth", type: "Bug/Poison", price: 700, gif: "https://projectpokemon.org/images/normal-sprite/venomoth.gif" },
+    { id: 45, name: "Diglett", type: "Ground", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/diglett.gif" }
         ];
         
         return pokemonList.find(p => p.id === id) || pokemonList[0];
@@ -463,3 +498,368 @@ document.head.appendChild(vfxStyle);
 document.addEventListener('DOMContentLoaded', () => {
     new PokemonBattle();
 });
+// Battle VFX System
+class BattleVFX {
+    constructor() {
+        this.vfxContainer = null;
+        this.initVFXContainer();
+    }
+
+    initVFXContainer() {
+        this.vfxContainer = document.createElement('div');
+        this.vfxContainer.className = 'vfx-container';
+        document.querySelector('.battle-container').appendChild(this.vfxContainer);
+    }
+
+    // Quick Attack VFX
+    createQuickAttack(startX, startY, isHit) {
+        const vfx = document.createElement('div');
+        vfx.className = 'vfx-quick-attack';
+        vfx.style.left = startX + 'px';
+        vfx.style.top = startY + 'px';
+        
+        this.vfxContainer.appendChild(vfx);
+        
+        // Add particles
+        if (isHit) {
+            this.createParticles(startX + 100, startY, 5, 'rgba(200,200,255,0.8)');
+        }
+        
+        setTimeout(() => {
+            vfx.remove();
+        }, 600);
+    }
+
+    // Super Attack VFX
+    createSuperAttack(x, y, isHit) {
+        const vfx = document.createElement('div');
+        vfx.className = 'vfx-super-attack';
+        vfx.style.left = (x - 60) + 'px';
+        vfx.style.top = (y - 60) + 'px';
+        
+        this.vfxContainer.appendChild(vfx);
+        
+        // Add explosion particles
+        if (isHit) {
+            this.createParticles(x, y, 12, 'rgba(255,100,100,0.9)');
+            this.createScreenShake();
+        }
+        
+        setTimeout(() => {
+            vfx.remove();
+        }, 800);
+    }
+
+    // Combo Attack VFX
+    createComboAttack(x, y, isHit) {
+        for (let i = 0; i < 3; i++) {
+            setTimeout(() => {
+                const vfx = document.createElement('div');
+                vfx.className = 'vfx-combo-attack';
+                vfx.style.left = (x - 50 + Math.random() * 40 - 20) + 'px';
+                vfx.style.top = (y - 50 + Math.random() * 40 - 20) + 'px';
+                vfx.style.animationDelay = (i * 0.1) + 's';
+                
+                this.vfxContainer.appendChild(vfx);
+                
+                if (isHit && i === 1) {
+                    this.createParticles(x, y, 8, 'rgba(150,50,255,0.8)');
+                    this.createScreenShake();
+                }
+                
+                setTimeout(() => {
+                    vfx.remove();
+                }, 1000);
+            }, i * 150);
+        }
+    }
+
+    // Hit/Miss VFX
+    createHitEffect(x, y, isCritical = false) {
+        const hit = document.createElement('div');
+        hit.className = 'vfx-hit';
+        hit.style.left = (x - 30) + 'px';
+        hit.style.top = (y - 30) + 'px';
+        
+        if (isCritical) {
+            hit.style.background = 'radial-gradient(circle, rgba(255,255,0,0.9) 0%, rgba(255,150,0,0.8) 30%, rgba(255,100,0,0.6) 60%, transparent 80%)';
+            hit.style.filter = 'blur(1px) brightness(3)';
+        }
+        
+        this.vfxContainer.appendChild(hit);
+        
+        setTimeout(() => {
+            hit.remove();
+        }, 400);
+    }
+
+    createMissEffect(x, y) {
+        const miss = document.createElement('div');
+        miss.className = 'vfx-miss';
+        miss.style.left = (x - 40) + 'px';
+        miss.style.top = (y - 40) + 'px';
+        
+        this.vfxContainer.appendChild(miss);
+        
+        setTimeout(() => {
+            miss.remove();
+        }, 600);
+    }
+
+    // Damage Text
+    createDamageText(x, y, damage, isCritical = false, isMiss = false) {
+        const text = document.createElement('div');
+        text.className = 'damage-text';
+        text.textContent = isMiss ? 'MISS!' : damage;
+        
+        if (isCritical) {
+            text.className += ' critical';
+        } else if (isMiss) {
+            text.className += ' miss';
+        } else {
+            text.className += ' hit';
+        }
+        
+        text.style.left = x + 'px';
+        text.style.top = y + 'px';
+        
+        this.vfxContainer.appendChild(text);
+        
+        setTimeout(() => {
+            text.remove();
+        }, 1000);
+    }
+
+    // Particle System
+    createParticles(x, y, count, color) {
+        for (let i = 0; i < count; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            particle.style.backgroundColor = color;
+            particle.style.width = (Math.random() * 8 + 4) + 'px';
+            particle.style.height = particle.style.width;
+            
+            // Random direction and distance
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * 60 + 30;
+            const tx = Math.cos(angle) * distance;
+            const ty = Math.sin(angle) * distance;
+            
+            particle.style.setProperty('--tx', tx + 'px');
+            particle.style.setProperty('--ty', ty + 'px');
+            
+            this.vfxContainer.appendChild(particle);
+            
+            setTimeout(() => {
+                particle.remove();
+            }, 1000);
+        }
+    }
+
+    // Screen Shake
+    createScreenShake() {
+        const battleContainer = document.querySelector('.battle-container');
+        battleContainer.classList.add('screen-shake');
+        
+        setTimeout(() => {
+            battleContainer.classList.remove('screen-shake');
+        }, 300);
+    }
+
+    // Pokemon Hit Flash
+    createPokemonHitFlash(pokemonElement) {
+        pokemonElement.classList.add('pokemon-hit-flash');
+        
+        setTimeout(() => {
+            pokemonElement.classList.remove('pokemon-hit-flash');
+        }, 300);
+    }
+
+    // Clear all VFX
+    clearVFX() {
+        this.vfxContainer.innerHTML = '';
+    }
+}
+
+// Initialize VFX System
+const battleVFX = new BattleVFX();
+
+// Updated Battle Attack Function with VFX
+function performAttack(attackType) {
+    const playerPokemon = document.querySelector('.player-pokemon .pokemon-sprite');
+    const opponentPokemon = document.querySelector('.opponent-pokemon .pokemon-sprite');
+    
+    // Get positions for VFX
+    const playerRect = playerPokemon.getBoundingClientRect();
+    const opponentRect = opponentPokemon.getBoundingClientRect();
+    
+    const playerX = playerRect.left + playerRect.width / 2;
+    const playerY = playerRect.top + playerRect.height / 2;
+    const opponentX = opponentRect.left + opponentRect.width / 2;
+    const opponentY = opponentRect.top + opponentRect.height / 2;
+    
+    // Calculate hit chance (80% base chance)
+    const hitChance = Math.random();
+    const isHit = hitChance < 0.8;
+    const isCritical = isHit && Math.random() < 0.2;
+    
+    // Player attack animation
+    playerPokemon.classList.add('attacking');
+    
+    setTimeout(() => {
+        playerPokemon.classList.remove('attacking');
+        
+        // Create attack VFX based on type
+        switch(attackType) {
+            case 'normal':
+                battleVFX.createQuickAttack(playerX, playerY, isHit);
+                break;
+            case 'special':
+                battleVFX.createSuperAttack(opponentX, opponentY, isHit);
+                break;
+            case 'critical':
+                battleVFX.createComboAttack(opponentX, opponentY, isHit);
+                break;
+        }
+        
+        if (isHit) {
+            // Hit VFX
+            setTimeout(() => {
+                battleVFX.createHitEffect(opponentX, opponentY, isCritical);
+                battleVFX.createPokemonHitFlash(opponentPokemon);
+                
+                // Damage calculation
+                const baseDamage = attackType === 'normal' ? 20 : 
+                                 attackType === 'special' ? 35 : 50;
+                const damage = isCritical ? Math.floor(baseDamage * 1.5) : baseDamage;
+                
+                // Show damage text
+                battleVFX.createDamageText(opponentX, opponentY, damage, isCritical);
+                
+                // Update health bar
+                updateOpponentHealth(damage);
+                
+                // Add to battle log
+                addToBattleLog(`Hit! ${getCurrentPokemonName()} dealt ${damage} damage${isCritical ? ' (CRITICAL!)' : ''}`);
+                
+            }, 300);
+        } else {
+            // Miss VFX
+            setTimeout(() => {
+                battleVFX.createMissEffect(opponentX, opponentY);
+                battleVFX.createDamageText(opponentX, opponentY, 0, false, true);
+                addToBattleLog(`${getCurrentPokemonName()} missed the attack!`);
+            }, 300);
+        }
+        
+        // Opponent counter attack after delay
+        setTimeout(() => {
+            performOpponentAttack();
+        }, 1500);
+        
+    }, 500);
+}
+
+// Opponent Attack with VFX
+function performOpponentAttack() {
+    const playerPokemon = document.querySelector('.player-pokemon .pokemon-sprite');
+    const opponentPokemon = document.querySelector('.opponent-pokemon .pokemon-sprite');
+    
+    const playerRect = playerPokemon.getBoundingClientRect();
+    const opponentRect = opponentPokemon.getBoundingClientRect();
+    
+    const playerX = playerRect.left + playerRect.width / 2;
+    const playerY = playerRect.top + playerRect.height / 2;
+    const opponentX = opponentRect.left + opponentRect.width / 2;
+    const opponentY = opponentRect.top + opponentRect.height / 2;
+    
+    // Opponent attack choices
+    const attacks = ['normal', 'special', 'critical'];
+    const opponentAttack = attacks[Math.floor(Math.random() * attacks.length)];
+    
+    // Hit chance for opponent (75% base chance)
+    const hitChance = Math.random();
+    const isHit = hitChance < 0.75;
+    const isCritical = isHit && Math.random() < 0.15;
+    
+    // Opponent attack animation
+    opponentPokemon.classList.add('attacking');
+    
+    setTimeout(() => {
+        opponentPokemon.classList.remove('attacking');
+        
+        // Create opponent attack VFX
+        switch(opponentAttack) {
+            case 'normal':
+                battleVFX.createQuickAttack(opponentX, opponentY, isHit);
+                break;
+            case 'special':
+                battleVFX.createSuperAttack(playerX, playerY, isHit);
+                break;
+            case 'critical':
+                battleVFX.createComboAttack(playerX, playerY, isHit);
+                break;
+        }
+        
+        if (isHit) {
+            setTimeout(() => {
+                battleVFX.createHitEffect(playerX, playerY, isCritical);
+                battleVFX.createPokemonHitFlash(playerPokemon);
+                
+                const baseDamage = opponentAttack === 'normal' ? 15 : 
+                                 opponentAttack === 'special' ? 30 : 40;
+                const damage = isCritical ? Math.floor(baseDamage * 1.5) : baseDamage;
+                
+                battleVFX.createDamageText(playerX, playerY, damage, isCritical);
+                updatePlayerHealth(damage);
+                
+                addToBattleLog(`Opponent's ${getOpponentAttackName(opponentAttack)} hit for ${damage} damage${isCritical ? ' (CRITICAL!)' : ''}`);
+                
+            }, 300);
+        } else {
+            setTimeout(() => {
+                battleVFX.createMissEffect(playerX, playerY);
+                battleVFX.createDamageText(playerX, playerY, 0, false, true);
+                addToBattleLog(`Opponent's attack missed!`);
+            }, 300);
+        }
+        
+    }, 500);
+}
+
+// Helper functions
+function getCurrentPokemonName() {
+    return document.querySelector('.player-health .pokemon-name').textContent;
+}
+
+function getOpponentAttackName(attackType) {
+    const names = {
+        'normal': 'Quick Attack',
+        'special': 'Super Attack', 
+        'critical': 'Combo'
+    };
+    return names[attackType];
+}
+
+// Initialize attack buttons
+function initializeAttackButtons() {
+    const attackButtons = document.querySelectorAll('.attack-btn');
+    
+    attackButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const attackType = this.dataset.type;
+            performAttack(attackType);
+            
+            // Disable buttons during attack sequence
+            attackButtons.forEach(btn => btn.disabled = true);
+            setTimeout(() => {
+                attackButtons.forEach(btn => btn.disabled = false);
+            }, 2500);
+        });
+    });
+}
+
+// Call this when battle starts
+initializeAttackButtons();
