@@ -923,3 +923,46 @@ body {
         opacity: 0;
     }
 }
+/* Blockchain Status Styles */
+.blockchain-status {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-size: 0.8em;
+    z-index: 1000;
+    border: 1px solid #333;
+    backdrop-filter: blur(10px);
+}
+
+.blockchain-buy {
+    background: linear-gradient(45deg, #f6851b, #e2761b) !important;
+}
+
+.local-buy {
+    background: linear-gradient(45deg, #3366cc, #2547a3) !important;
+}
+
+/* Coin animations */
+@keyframes coinGain {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.coin-gain {
+    animation: coinGain 0.5s ease;
+}
+
+@keyframes coinLoss {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.8); color: #ff4444; }
+    100% { transform: scale(1); }
+}
+
+.coin-loss {
+    animation: coinLoss 0.5s ease;
+}

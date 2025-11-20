@@ -50,7 +50,7 @@ const pokemonData = [
 // Game State
 let gameState = {
     playerName: "Jim",
-    coins: 5000,
+    coins: 0, // 0
     selectedPokemon: 20,
     ownedPokemon: [1, 4, 6, 8, 10, 13, 16, 19, 21, 23, 25, 27, 29, 32, 35, 37, 39, 41, 43, 45],
     currentAvatar: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/trainers/1.png",
@@ -89,6 +89,95 @@ const sortFilter = document.getElementById('sort-filter');
 const prevPageBtn = document.getElementById('prev-page');
 const nextPageBtn = document.getElementById('next-page');
 const pageInfo = document.getElementById('page-info');
+
+
+
+
+
+
+
+function updateCoinsFromBattle(coinsEarned) {
+    if (window.pokemonWeb3 && window.pokemonWeb3.isConnected) {
+        // If MetaMask is connected, use blockchain for coins
+        updateBlockchainCoins(coinsEarned);
+    } else {
+        // Use local storage for coins
+        gameState.coins += coinsEarned;
+        updateUI();
+        saveGameState();
+        showNotification(`🎉 You earned ${coinsEarned} coins from battle!`);
+    }
+}
+
+function deductCoinsFromLoss(coinsLost) {
+    if (window.pokemonWeb3 && window.pokemonWeb3.isConnected) {
+        // If MetaMask is connected, use blockchain for coins
+        deductBlockchainCoins(coinsLost);
+    } else {
+        // Use local storage for coins
+        gameState.coins = Math.max(0, gameState.coins - coinsLost);
+        updateUI();
+        saveGameState();
+        showNotification(`💸 Lost ${coinsLost} coins from defeat!`);
+    }
+}
+
+// Blockchain coin functions
+async function updateBlockchainCoins(coinsEarned) {
+    try {
+        // This would interact with your smart contract
+        console.log(`Adding ${coinsEarned} coins via blockchain`);
+        
+        // For now, we'll simulate the blockchain transaction
+        const transactionSuccess = await simulateBlockchainTransaction('addCoins', coinsEarned);
+        
+        if (transactionSuccess) {
+            // Update local display
+            gameState.coins += coinsEarned;
+            updateUI();
+            showNotification(`🎉 ${coinsEarned} coins added to your wallet!`);
+        }
+    } catch (error) {
+        console.error('Blockchain transaction failed:', error);
+        // Fallback to local storage
+        gameState.coins += coinsEarned;
+        updateUI();
+        saveGameState();
+    }
+}
+async function deductBlockchainCoins(coinsLost) {
+    try {
+        console.log(`Deducting ${coinsLost} coins via blockchain`);
+        
+        const transactionSuccess = await simulateBlockchainTransaction('deductCoins', coinsLost);
+        
+        if (transactionSuccess) {
+            gameState.coins = Math.max(0, gameState.coins - coinsLost);
+            updateUI();
+            showNotification(`💸 ${coinsLost} coins deducted from your wallet!`);
+        }
+    } catch (error) {
+        console.error('Blockchain transaction failed:', error);
+        gameState.coins = Math.max(0, gameState.coins - coinsLost);
+        updateUI();
+        saveGameState();
+    }
+}
+
+// Simulate blockchain transactions (replace with actual contract calls)
+async function simulateBlockchainTransaction(action, amount) {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            // Simulate successful transaction 90% of the time
+            resolve(Math.random() < 0.9);
+        }, 1000);
+    });
+}
+
+
+
+
+
 
 // Name Change Functionality
 class NameChangeManager {
@@ -241,6 +330,27 @@ function initGame() {
     
     setupEventListeners();
     updateCollectionInfo();
+    updateBlockchainStatus();
+    
+    // Check if returning from battle
+    checkBattleResults();
+}
+
+// Check for battle results when returning from battle
+function checkBattleResults() {
+    const battleResult = localStorage.getItem('battleResult');
+    const coinsEarned = localStorage.getItem('coinsEarned');
+    const coinsLost = localStorage.getItem('coinsLost');
+    
+    if (battleResult === 'win' && coinsEarned) {
+        updateCoinsFromBattle(parseInt(coinsEarned));
+        localStorage.removeItem('battleResult');
+        localStorage.removeItem('coinsEarned');
+    } else if (battleResult === 'lose' && coinsLost) {
+        deductCoinsFromLoss(parseInt(coinsLost));
+        localStorage.removeItem('battleResult');
+        localStorage.removeItem('coinsLost');
+    }
 }
 
 // Load game state from localStorage
@@ -313,43 +423,100 @@ function populatePokemonGrid() {
 }
 // Add to your game.js - Marketplace Web3 integration
 
+// Update the Web3 integration to sync coins
 function setupMarketplaceWeb3() {
     const connectBtn = document.getElementById('connect-wallet-btn');
     if (connectBtn) {
-        connectBtn.addEventListener('click', () => {
-            window.pokemonWeb3.connectWallet();
+        connectBtn.addEventListener('click', async () => {
+            await window.pokemonWeb3.connectWallet();
+            // Sync coins after connecting
+            syncCoinsWithBlockchain();
         });
     }
     
-    // Update marketplace items to include buy buttons
+    // Update marketplace items to show blockchain prices
     updateMarketplaceWeb3UI();
 }
 
+function syncCoinsWithBlockchain() {
+    if (window.pokemonWeb3 && window.pokemonWeb3.isConnected) {
+        // Simulate getting coin balance from blockchain
+        setTimeout(() => {
+            const blockchainCoins = Math.floor(Math.random() * 1000); // Simulated balance
+            gameState.coins = blockchainCoins;
+            updateUI();
+            showNotification(`🔄 Synced with blockchain: ${blockchainCoins} coins`);
+        }, 1000);
+    }
+}
+
 function updateMarketplaceWeb3UI() {
-    // This would be called when loading marketplace items
     const marketplaceItems = document.querySelectorAll('.marketplace-item');
     
     marketplaceItems.forEach(item => {
         const pokemonId = item.dataset.pokemonId;
         const price = item.dataset.price;
         
-        // Add Web3 buy button
         const buyBtn = document.createElement('button');
-        buyBtn.className = 'buy-button';
-        buyBtn.textContent = `Buy for ${price} ETH`;
-        buyBtn.onclick = () => {
-            window.pokemonWeb3.buyPokemon(pokemonId, price);
-        };
         
-        // Find the action container and add buy button
+        if (window.pokemonWeb3 && window.pokemonWeb3.isConnected) {
+            buyBtn.className = 'buy-button blockchain-buy';
+            buyBtn.textContent = `Buy for ${price} ETH`;
+            buyBtn.onclick = () => {
+                window.pokemonWeb3.buyPokemon(pokemonId, price);
+            };
+        } else {
+            buyBtn.className = 'buy-button local-buy';
+            buyBtn.textContent = `Buy for 🪙 ${price}`;
+            buyBtn.onclick = () => {
+                buyPokemon(parseInt(pokemonId));
+            };
+        }
+        
         const actions = item.querySelector('.item-actions');
         if (actions) {
-            // Remove existing action buttons if any
             actions.innerHTML = '';
             actions.appendChild(buyBtn);
         }
     });
 }
+// Add blockchain status indicator
+function updateBlockchainStatus() {
+    const statusElement = document.getElementById('blockchain-status') || createBlockchainStatusElement();
+    
+    if (window.pokemonWeb3 && window.pokemonWeb3.isConnected) {
+        statusElement.innerHTML = `
+            <span style="color: #4CAF50;">●</span> Connected to Blockchain
+            <span style="margin-left: 10px; font-size: 0.8em;">Coins: ${gameState.coins}</span>
+        `;
+    } else {
+        statusElement.innerHTML = `
+            <span style="color: #ff4444;">●</span> Local Mode
+            <span style="margin-left: 10px; font-size: 0.8em;">Coins: ${gameState.coins}</span>
+        `;
+    }
+}
+function createBlockchainStatusElement() {
+    const statusElement = document.createElement('div');
+    statusElement.id = 'blockchain-status';
+    statusElement.style.cssText = `
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 5px;
+        font-size: 0.9em;
+        z-index: 1000;
+        border: 1px solid #333;
+    `;
+    document.body.appendChild(statusElement);
+    return statusElement;
+}
+
+
+
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -461,7 +628,7 @@ function populateMarketplace() {
     });
 }
 
-// Buy Pokemon
+// Update marketplace to work with blockchain
 function buyPokemon(pokemonId) {
     const pokemon = pokemonData.find(p => p.id === pokemonId);
     
@@ -472,8 +639,17 @@ function buyPokemon(pokemonId) {
         return;
     }
     
-    if (gameState.coins >= pokemon.price) {
-        gameState.coins -= pokemon.price;
+    // Check if using blockchain or local coins
+    if (window.pokemonWeb3 && window.pokemonWeb3.isConnected) {
+        buyPokemonWithBlockchain(pokemonId, pokemon.price);
+    } else {
+        buyPokemonWithLocalCoins(pokemonId, pokemon.price);
+    }
+}
+
+function buyPokemonWithLocalCoins(pokemonId, price) {
+    if (gameState.coins >= price) {
+        gameState.coins -= price;
         gameState.ownedPokemon.push(pokemonId);
         
         updateUI();
@@ -482,10 +658,43 @@ function buyPokemon(pokemonId) {
         populateMarketplace();
         saveGameState();
         
-        showNotification(`Congratulations! You bought ${pokemon.name} for 🪙 ${pokemon.price}!`);
+        showNotification(`Congratulations! You bought ${pokemonData.find(p => p.id === pokemonId).name} for 🪙 ${price}!`);
     } else {
-        showNotification(`Not enough coins to buy ${pokemon.name}!`);
+        showNotification(`Not enough coins to buy ${pokemonData.find(p => p.id === pokemonId).name}!`);
     }
+}
+async function buyPokemonWithBlockchain(pokemonId, price) {
+    try {
+        showNotification(`Processing blockchain purchase...`);
+        
+        // Simulate blockchain purchase
+        const purchaseSuccess = await simulateBlockchainPurchase(pokemonId, price);
+        
+        if (purchaseSuccess) {
+            gameState.ownedPokemon.push(pokemonId);
+            
+            updateCollectionInfo();
+            populatePokemonGrid();
+            populateMarketplace();
+            saveGameState();
+            
+            showNotification(`🎉 Purchased ${pokemonData.find(p => p.id === pokemonId).name} via blockchain!`);
+        } else {
+            showNotification(`❌ Blockchain purchase failed!`);
+        }
+    } catch (error) {
+        console.error('Blockchain purchase error:', error);
+        showNotification(`❌ Purchase failed: ${error.message}`);
+    }
+}
+
+async function simulateBlockchainPurchase(pokemonId, price) {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            // Simulate successful purchase 85% of the time
+            resolve(Math.random() < 0.85);
+        }, 2000);
+    });
 }
 
 // Setup event listeners
@@ -509,24 +718,41 @@ function setupEventListeners() {
         }
     });
 
-    // Battle button functionality
-    document.getElementById('battle-btn').addEventListener('click', function() {
-        // Save current game state to ensure selected Pokemon is saved
+    // Update the battle button to handle coin transfers
+document.getElementById('battle-btn').addEventListener('click', function() {
+    // Check if player has enough coins for battle entry fee
+    const battleEntryFee = 50; // 50 coins to enter battle
+    
+    if (gameState.coins < battleEntryFee && !window.pokemonWeb3?.isConnected) {
+        showNotification(`You need at least ${battleEntryFee} coins to enter battle!`);
+        return;
+    }
+    
+    // Deduct entry fee if using local coins
+    if (!window.pokemonWeb3?.isConnected) {
+        gameState.coins -= battleEntryFee;
+        updateUI();
         saveGameState();
-        
-        // Get trainer data
-        const trainerName = document.getElementById('player-name').textContent;
-        const coins = document.getElementById('coin-amount').textContent.replace(/,/g, '');
-        
-        // Save to localStorage
-        localStorage.setItem('trainerName', trainerName);
-        localStorage.setItem('playerCoins', coins);
-        
-        // Add small delay to ensure save is complete
-        setTimeout(() => {
-            window.location.href = `battle.html?trainer=${encodeURIComponent(trainerName)}`;
-        }, 100);
-    });
+        showNotification(`🎫 Paid ${battleEntryFee} coins battle entry fee!`);
+    }
+    
+    // Save current game state
+    saveGameState();
+    
+    // Get trainer data
+    const trainerName = document.getElementById('player-name').textContent;
+    const coins = gameState.coins;
+    
+    // Save to localStorage for battle
+    localStorage.setItem('trainerName', trainerName);
+    localStorage.setItem('playerCoins', coins);
+    localStorage.setItem('usingBlockchain', window.pokemonWeb3?.isConnected ? 'true' : 'false');
+    
+    // Add small delay to ensure save is complete
+    setTimeout(() => {
+        window.location.href = `battle.html?trainer=${encodeURIComponent(trainerName)}`;
+    }, 100);
+});
 
     // Change avatar functionality
     changeAvatarBtn.addEventListener('click', () => {
@@ -688,5 +914,8 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Initialize the game when the page loads
-document.addEventListener('DOMContentLoaded', initGame);
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    setupMarketplaceWeb3();
+    initGame();
+});

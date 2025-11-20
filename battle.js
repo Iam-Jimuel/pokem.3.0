@@ -1,3 +1,7 @@
+const BATTLE_ENTRY_FEE = 50;
+const WIN_REWARD = 100;
+const LOSS_PENALTY = 25;
+
 class PokemonBattle {
     constructor() {
         this.battleState = {
@@ -72,6 +76,11 @@ class PokemonBattle {
         this.battleState.opponentHealth = this.battleState.opponentMaxHealth;
     }
 
+
+
+
+
+    
     getPokemonData(id) {
         const pokemonList = [
             { id: 1, name: "Bulbasaur", type: "Grass/Poison", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/bulbasaur.gif" },
@@ -350,67 +359,85 @@ class PokemonBattle {
     }
 
     endBattle(playerWon) {
-        this.battleState.battleActive = false;
-        this.disableControls();
+    this.battleState.battleActive = false;
+    this.disableControls();
 
-        setTimeout(() => {
-            this.showBattleResult(playerWon);
-        }, 1500);
+    // Calculate rewards/penalties
+    if (playerWon) {
+        this.battleState.rewards.coins = WIN_REWARD;
+    } else {
+        this.battleState.rewards.coins = -LOSS_PENALTY;
     }
 
-    showBattleResult(playerWon) {
-        const modal = document.getElementById('battle-modal');
-        const resultHeader = document.getElementById('result-header');
-        const resultMessage = document.getElementById('result-message');
-        const rewardsDiv = document.getElementById('rewards');
+    setTimeout(() => {
+        this.showBattleResult(playerWon);
+        this.saveBattleResult(playerWon);
+    }, 1500);
+}
 
-        modal.style.display = 'flex';
+// Add this new function to save battle results
+saveBattleResult(playerWon) {
+    if (playerWon) {
+        localStorage.setItem('battleResult', 'win');
+        localStorage.setItem('coinsEarned', WIN_REWARD.toString());
+    } else {
+        localStorage.setItem('battleResult', 'lose');
+        localStorage.setItem('coinsLost', LOSS_PENALTY.toString());
+    }
+}
+
+    // Update the showBattleResult function to show penalties
+showBattleResult(playerWon) {
+    const modal = document.getElementById('battle-modal');
+    const resultHeader = document.getElementById('result-header');
+    const resultMessage = document.getElementById('result-message');
+    const rewardsDiv = document.getElementById('rewards');
+
+    modal.style.display = 'flex';
+    
+    if (playerWon) {
+        modal.className = 'battle-modal victory';
+        resultHeader.innerHTML = '<h2>Victory!</h2>';
+        resultMessage.textContent = `Congratulations! Your ${this.battleState.playerPokemon.name} defeated ${this.battleState.opponentPokemon.name}!`;
         
-        if (playerWon) {
-            modal.className = 'battle-modal victory';
-            resultHeader.innerHTML = '<h2>Victory!</h2>';
-            resultMessage.textContent = `Congratulations! Your ${this.battleState.playerPokemon.name} defeated ${this.battleState.opponentPokemon.name}!`;
-            
-            // Calculate rewards
-            const baseReward = 500;
-            const bonusReward = Math.floor(this.battleState.opponentMaxHealth / 10);
-            const totalReward = baseReward + bonusReward;
-            
-            this.battleState.rewards.coins = totalReward;
-            
-            rewardsDiv.innerHTML = `
-                <div class="reward-item">
-                    <span>Coins Earned:</span>
-                    <span class="reward-amount">🪙 ${totalReward}</span>
-                </div>
-                <div class="reward-item">
-                    <span>Experience:</span>
-                    <span class="reward-amount">⭐ 100</span>
-                </div>
-            `;
+        rewardsDiv.innerHTML = `
+            <div class="reward-item">
+                <span>Coins Earned:</span>
+                <span class="reward-amount">+🪙 ${WIN_REWARD}</span>
+            </div>
+            <div class="reward-item">
+                <span>Experience:</span>
+                <span class="reward-amount">⭐ 100</span>
+            </div>
+        `;
+        this.updatePlayerCoins(WIN_REWARD);
+        this.playSound('win');
+    } else {
+        modal.className = 'battle-modal defeat';
+        resultHeader.innerHTML = '<h2>Defeat!</h2>';
+        resultMessage.textContent = `Your ${this.battleState.playerPokemon.name} was defeated!`;
+        
+        rewardsDiv.innerHTML = `
+            <div class="reward-item">
+                <span>Coins Lost:</span>
+                <span class="reward-amount" style="color: #ff4444;">-🪙 ${LOSS_PENALTY}</span>
+            </div>
+            <div class="reward-item">
+                <span>Battle Fee:</span>
+                <span class="reward-amount" style="color: #ff4444;">-🪙 ${BATTLE_ENTRY_FEE}</span>
+            </div>
+        `;
 
-            // Update player coins
-            this.updatePlayerCoins(totalReward);
-            
-            // Play victory sound
-            this.playSound('win');
-        } else {
-            modal.className = 'battle-modal defeat';
-            resultHeader.innerHTML = '<h2>Defeat!</h2>';
-            resultMessage.textContent = `Your ${this.battleState.playerPokemon.name} was defeated!`;
-            rewardsDiv.innerHTML = '<div class="reward-item">Better luck next time!</div>';
-            
-            // Play defeat sound
-            this.playSound('lose');
-        }
+        this.updatePlayerCoins(-LOSS_PENALTY);
+        this.playSound('lose');
     }
+}
 
     updatePlayerCoins(coins) {
-        // Update coins in localStorage
-        const gameState = JSON.parse(localStorage.getItem('pokemonGameState') || '{}');
-        gameState.coins = (gameState.coins || 0) + coins;
-        localStorage.setItem('pokemonGameState', JSON.stringify(gameState));
-    }
+    // This will be handled by the main game when returning from battle
+    // We just save the result to localStorage
+    console.log(`Coin update: ${coins}`);
+}
 
     fleeBattle() {
         if (!this.battleState.battleActive) return;
