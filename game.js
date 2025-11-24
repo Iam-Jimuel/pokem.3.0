@@ -654,6 +654,10 @@ class MultiplayerManager {
                         </div>
                     </div>
                     
+                    <button id="start-battle-btn" class="nav-btn" style="background: linear-gradient(45deg, #FF5722, #E64A19); width: 100%; padding: 12px; margin-bottom: 15px; display: none;">
+                        Start Battle
+                    </button>
+                    
                     <button id="ready-btn" class="nav-btn" style="background: linear-gradient(45deg, #FF9800, #F57C00); width: 100%; padding: 12px; margin-bottom: 15px;">
                         Ready Up
                     </button>
