@@ -127,8 +127,9 @@ class PokemonBattle {
     { id: 42, name: "Parasect", type: "Bug/Grass", price: 600, gif: "https://projectpokemon.org/images/normal-sprite/parasect.gif" },
     { id: 43, name: "Venonat", type: "Bug/Poison", price: 300, gif: "https://projectpokemon.org/images/normal-sprite/venonat.gif" },
     { id: 44, name: "Venomoth", type: "Bug/Poison", price: 700, gif: "https://projectpokemon.org/images/normal-sprite/venomoth.gif" },
-    { id: 45, name: "Diglett", type: "Ground", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/diglett.gif" }
-        ];
+    { id: 45, name: "Diglett", type: "Ground", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/diglett.gif" },
+       {id: 46, name: "Snoorlax", type: "Happy", price: 500, gif: "https://projectpokemon.org/home/uploads/monthly_2018_05/large.ShinySnorlax.Gif.a3f81dc2af71384a08a36aae27ac67d1.Gif"} 
+];
         
         return pokemonList.find(p => p.id === id) || pokemonList[0];
     }

@@ -44,7 +44,8 @@ const pokemonData = [
     { id: 42, name: "Parasect", type: "Bug/Grass", price: 600, gif: "https://projectpokemon.org/images/normal-sprite/parasect.gif" },
     { id: 43, name: "Venonat", type: "Bug/Poison", price: 300, gif: "https://projectpokemon.org/images/normal-sprite/venonat.gif" },
     { id: 44, name: "Venomoth", type: "Bug/Poison", price: 700, gif: "https://projectpokemon.org/images/normal-sprite/venomoth.gif" },
-    { id: 45, name: "Diglett", type: "Ground", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/diglett.gif" }
+    { id: 45, name: "Diglett", type: "Ground", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/diglett.gif" },
+    {id: 46, name: "Snoorlax", type: "Happy", price: 500, gif: "https://projectpokemon.org/home/uploads/monthly_2018_05/large.ShinySnorlax.Gif.a3f81dc2af71384a08a36aae27ac67d1.Gif"}
 ];
 
 // Game State
@@ -91,6 +92,20 @@ const nextPageBtn = document.getElementById('next-page');
 const pageInfo = document.getElementById('page-info');
 
 
+// Sync with blockchain
+async function syncWithBlockchain() {
+    if (window.pokemonWeb3 && window.pokemonWeb3.isConnected) {
+        try {
+            // Get token balance from blockchain
+            const blockchainBalance = await window.pokemonWeb3.getTokenBalance();
+            gameState.coins = parseInt(blockchainBalance);
+            updateUI();
+            console.log('Synced with blockchain:', gameState.coins, 'coins');
+        } catch (error) {
+            console.log('Blockchain sync failed, using local storage');
+        }
+    }
+}
 
 
 
@@ -105,30 +120,30 @@ function updateCoinsFromBattle(coinsEarned) {
         gameState.coins += coinsEarned;
         updateUI();
         saveGameState();
-        showNotification(`🎉 You earned ${coinsEarned} coins from battle!`);
+        showNotification(`You earned ${coinsEarned} coins from battle!`);
     }
 }
 
 function deductCoinsFromLoss(coinsLost) {
     if (window.pokemonWeb3 && window.pokemonWeb3.isConnected) {
-        // If MetaMask is connected, use blockchain for coins
+        // If MetaMask is connected blockchain for coins
         deductBlockchainCoins(coinsLost);
     } else {
-        // Use local storage for coins
+        // local storage for coins
         gameState.coins = Math.max(0, gameState.coins - coinsLost);
         updateUI();
         saveGameState();
-        showNotification(`💸 Lost ${coinsLost} coins from defeat!`);
+        showNotification(`Lost ${coinsLost} coins from defeat!`);
     }
 }
 
 // Blockchain coin functions
 async function updateBlockchainCoins(coinsEarned) {
     try {
-        // This would interact with your smart contract
+        // interact with smart contract
         console.log(`Adding ${coinsEarned} coins via blockchain`);
         
-        // For now, we'll simulate the blockchain transaction
+        // simulate the blockchain transaction
         const transactionSuccess = await simulateBlockchainTransaction('addCoins', coinsEarned);
         
         if (transactionSuccess) {
@@ -321,20 +336,21 @@ let nameChangeManager = document.getElementById('new-name-input');
 // Initialize the game
 function initGame() {
     loadGameState();
-    updateUI(); 
-    populatePokemonGrid();
-    setSelectedPokemon(gameState.ownedPokemon.indexOf(gameState.selectedPokemon));
     
-    // Initialize name change functionality
-    nameChangeManager = new NameChangeManager();
-    
-    setupEventListeners();
-    updateCollectionInfo();
-    updateBlockchainStatus();
-    
-    // Check if returning from battle
-    checkBattleResults();
+    // SYNC WITH BLOCKCHAIN FIRST
+    syncWithBlockchain().then(() => {
+        updateUI();
+        populatePokemonGrid();
+        setSelectedPokemon(gameState.ownedPokemon.indexOf(gameState.selectedPokemon));
+        
+        nameChangeManager = new NameChangeManager();
+        setupEventListeners();
+        updateCollectionInfo();
+        updateBlockchainStatus();
+        checkBattleResults();
+    });
 }
+
 
 // Check for battle results when returning from battle
 function checkBattleResults() {
@@ -421,7 +437,6 @@ function populatePokemonGrid() {
         }
     });
 }
-// Add to your game.js - Marketplace Web3 integration
 
 // Update the Web3 integration to sync coins
 function setupMarketplaceWeb3() {
@@ -515,7 +530,412 @@ function createBlockchainStatusElement() {
     return statusElement;
 }
 
+// Multiplayer System
+class MultiplayerManager {
+    constructor() {
+        this.socket = null;
+        this.currentRoom = null;
+        this.opponent = null;
+        this.isMultiplayer = false;
+        this.battleState = 'idle';
+        this.modal = null;
+    }
 
+    connect() {
+        try {
+            // Connect to local server
+            this.socket = io('http://127.0.0.1:5500');
+            
+            this.socket.on('connect', () => {
+                console.log('✅ Connected to multiplayer server');
+                this.showMultiplayerMenu();
+            });
+
+            this.socket.on('roomCreated', (roomId) => {
+                this.currentRoom = roomId;
+                this.battleState = 'waiting';
+                this.showWaitingRoom(roomId);
+            });
+
+            this.socket.on('playerJoined', (data) => {
+                this.opponent = data.room.players.find(p => p.id !== this.socket.id);
+                this.updateWaitingRoom(data.room);
+            });
+
+            this.socket.on('playerReadyUpdate', (players) => {
+                this.updateReadyStatus(players);
+            });
+
+            this.socket.on('battleStarted', (data) => {
+                this.startMultiplayerBattle(data);
+            });
+
+            this.socket.on('attackResult', (data) => {
+                this.processOpponentAttack(data);
+            });
+
+            this.socket.on('battleFinished', (data) => {
+                this.endMultiplayerBattle(data);
+            });
+
+            this.socket.on('newMessage', (data) => {
+                this.addChatMessage(data);
+            });
+
+            this.socket.on('error', (message) => {
+                this.showNotification(`${message}`);
+            });
+
+            this.socket.on('disconnect', () => {
+                this.showNotification('Disconnected from server');
+            });
+
+        } catch (error) {
+            console.error('Multiplayer connection failed:', error);
+            this.showNotification('Cannot connect to multiplayer server. Make sure server is running');
+        }
+    }
+
+    showMultiplayerMenu() {
+        // Remove any existing modal first
+        const existingModal = document.querySelector('.multiplayer-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        this.modal = this.createMultiplayerModal();
+        document.body.appendChild(this.modal);
+        
+        // Show the modal
+        this.modal.style.display = 'block';
+    }
+
+    createMultiplayerModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal multiplayer-modal';
+        modal.style.display = 'block';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 500px; background: linear-gradient(135deg, #1a1a1a, #2d2d2d); border: 3px solid #ff9900;">
+                <span class="close" style="color: white; font-size: 24px;">&times;</span>
+                <h2 style="color: #ff9900; text-align: center; margin-bottom: 20px;"> Multiplayer Battle</h2>
+                
+                <div class="multiplayer-options">
+                    <button id="create-room-btn" class="nav-btn" style="background: linear-gradient(45deg, #4CAF50, #45a049); width: 100%; margin-bottom: 15px; padding: 15px;">
+                        Create New Room
+                    </button>
+                    
+                    <div style="text-align: center; margin: 15px 0; color: white;">- OR -</div>
+                    
+                    <div class="join-room-section" style="display: flex; gap: 10px;">
+                        <input type="text" id="room-code-input" placeholder="Enter 6-digit Code" maxlength="6" 
+                               style="flex: 1; padding: 12px; border: 2px solid #ff9900; border-radius: 5px; background: rgba(0,0,0,0.8); color: white; font-size: 16px; text-align: center;">
+                        <button id="join-room-btn" class="nav-btn" style="background: linear-gradient(45deg, #2196F3, #1976D2); padding: 12px 20px;">
+                            Join
+                        </button>
+                    </div>
+                </div>
+
+                <div id="waiting-room" style="display: none; margin-top: 20px;">
+                    <h3 style="color: #ff9900; text-align: center;">Room Code: <span id="room-code" style="background: #ff9900; color: black; padding: 5px 10px; border-radius: 5px;"></span></h3>
+                    
+                    <div class="players-list" style="margin: 20px 0;">
+                        <div class="player-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; margin: 10px 0;">
+                            <span style="color: white;">You (${gameState.playerName})</span>
+                            <span id="player-ready-status" style="color: #ff4444;"> Not Ready</span>
+                        </div>
+                        <div class="player-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; margin: 10px 0;">
+                            <span id="opponent-name" style="color: white;">Waiting for opponent...</span>
+                            <span id="opponent-ready-status"></span>
+                        </div>
+                    </div>
+                    
+                    <button id="ready-btn" class="nav-btn" style="background: linear-gradient(45deg, #FF9800, #F57C00); width: 100%; padding: 12px; margin-bottom: 15px;">
+                        Ready Up
+                    </button>
+                    
+                    <div class="chat-box" style="border: 2px solid #ff9900; border-radius: 5px; padding: 10px; background: rgba(0,0,0,0.8);">
+                        <div id="chat-messages" style="height: 100px; overflow-y: auto; margin-bottom: 10px; padding: 5px; background: rgba(255,255,255,0.1); border-radius: 3px; color: white;"></div>
+                        <div style="display: flex; gap: 5px;">
+                            <input type="text" id="chat-input" placeholder="Type a message..." 
+                                   style="flex: 1; padding: 8px; border: 1px solid #ff9900; border-radius: 3px; background: rgba(0,0,0,0.8); color: white;">
+                            <button id="send-chat-btn" class="nav-btn" style="padding: 8px 15px;">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        this.setupMultiplayerEvents(modal);
+        return modal;
+    }
+
+    setupMultiplayerEvents(modal) {
+        // Create room
+        modal.querySelector('#create-room-btn').addEventListener('click', () => {
+            console.log('Creating room...');
+            this.createRoom();
+        });
+
+        // Join room
+        modal.querySelector('#join-room-btn').addEventListener('click', () => {
+            const roomCode = modal.querySelector('#room-code-input').value.toUpperCase();
+            if (roomCode && roomCode.length === 6) {
+                console.log('Joining room:', roomCode);
+                this.joinRoom(roomCode);
+            } else {
+                this.showNotification('Please enter a 6-digit room code');
+            }
+        });
+
+        // Enter key for room code
+        modal.querySelector('#room-code-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const roomCode = modal.querySelector('#room-code-input').value.toUpperCase();
+                if (roomCode && roomCode.length === 6) {
+                    this.joinRoom(roomCode);
+                }
+            }
+        });
+
+        // Ready up
+        modal.querySelector('#ready-btn').addEventListener('click', () => {
+            this.socket.emit('playerReady');
+        });
+
+        // Chat
+        modal.querySelector('#send-chat-btn').addEventListener('click', () => {
+            this.sendChatMessage(modal);
+        });
+
+        modal.querySelector('#chat-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.sendChatMessage(modal);
+            }
+        });
+
+        // Close modal
+        modal.querySelector('.close').addEventListener('click', () => {
+            this.closeModal();
+        });
+
+        // Close when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.closeModal();
+            }
+        });
+    }
+
+    closeModal() {
+        if (this.modal) {
+            this.modal.remove();
+            this.modal = null;
+        }
+        if (this.socket) {
+            this.socket.disconnect();
+        }
+    }
+
+    createRoom() {
+        if (!this.socket || !this.socket.connected) {
+            this.showNotification('Not connected to server');
+            return;
+        }
+
+        const playerData = {
+            name: gameState.playerName,
+            pokemon: this.getCurrentPokemonData()
+        };
+        
+        this.socket.emit('createRoom', playerData);
+        this.showNotification('Creating room...');
+    }
+
+    joinRoom(roomId) {
+        if (!this.socket || !this.socket.connected) {
+            this.showNotification('Not connected to server');
+            return;
+        }
+
+        const playerData = {
+            name: gameState.playerName,
+            pokemon: this.getCurrentPokemonData()
+        };
+        
+        this.socket.emit('joinRoom', { roomId, playerData });
+        this.showNotification(`Joining room ${roomId}...`);
+    }
+
+    getCurrentPokemonData() {
+        const pokemon = pokemonData.find(p => p.id === gameState.selectedPokemon);
+        return pokemon || pokemonData[0]; // Fallback to first pokemon
+    }
+
+    showWaitingRoom(roomId) {
+        if (!this.modal) return;
+
+        this.modal.querySelector('.multiplayer-options').style.display = 'none';
+        this.modal.querySelector('#waiting-room').style.display = 'block';
+        this.modal.querySelector('#room-code').textContent = roomId;
+        
+        this.showNotification(`Room ${roomId} created! Share this code with your friend.`);
+    }
+
+    updateWaitingRoom(room) {
+        if (!this.modal) return;
+
+        const opponent = room.players.find(p => p.id !== this.socket.id);
+        if (opponent) {
+            this.modal.querySelector('#opponent-name').textContent = `${opponent.name}`;
+            this.showNotification(`${opponent.name} joined the room!`);
+        }
+    }
+
+    updateReadyStatus(players) {
+        if (!this.modal) return;
+
+        players.forEach(player => {
+            const statusElement = player.id === this.socket.id ? 
+                this.modal.querySelector('#player-ready-status') : 
+                this.modal.querySelector('#opponent-ready-status');
+            
+            if (statusElement) {
+                statusElement.textContent = player.ready ? '✅ Ready' : '❌ Not Ready';
+                statusElement.style.color = player.ready ? '#4CAF50' : '#ff4444';
+            }
+        });
+    }
+
+    startMultiplayerBattle(data) {
+        this.isMultiplayer = true;
+        this.battleState = 'battling';
+        
+        // Close modal
+        this.closeModal();
+        
+        // Start battle
+        this.initializeMultiplayerBattle(data);
+    }
+
+    initializeMultiplayerBattle(data) {
+        this.showNotification('⚔️ Multiplayer battle starting!');
+        
+        // For now, just show a simple battle screen
+        setTimeout(() => {
+            this.showSimpleBattleScreen(data);
+        }, 1000);
+    }
+
+    showSimpleBattleScreen(data) {
+        const battleScreen = document.createElement('div');
+        battleScreen.innerHTML = `
+            <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1a1a1a, #2d2d2d); z-index: 10000; color: white; padding: 20px;">
+                <h1 style="text-align: center; color: #ff9900;">⚔️ Multiplayer Battle</h1>
+                <div style="text-align: center; margin: 20px 0;">
+                    <p>Battle started between you and opponent!</p>
+                    <p>This is a simplified battle view.</p>
+                </div>
+                <button onclick="this.parentElement.remove()" style="display: block; margin: 20px auto; padding: 10px 20px; background: #ff9900; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    Close Battle
+                </button>
+            </div>
+        `;
+        document.body.appendChild(battleScreen);
+    }
+
+    processOpponentAttack(data) {
+        this.showNotification(`Opponent attacked for ${data.damage} damage!`);
+    }
+
+    endMultiplayerBattle(data) {
+        const winner = data.winner === this.socket.id ? 'You' : 'Opponent';
+        this.showNotification(`🎉 ${winner} won the battle!`);
+    }
+
+    addChatMessage(data) {
+        if (!this.modal) return;
+
+        const chatContainer = this.modal.querySelector('#chat-messages');
+        if (chatContainer) {
+            const messageElement = document.createElement('div');
+            messageElement.style.margin = '5px 0';
+            messageElement.style.fontSize = '0.9em';
+            messageElement.innerHTML = `
+                <span style="color: #888;">[${new Date().toLocaleTimeString()}] </span>
+                <span style="color: #ff9900; font-weight: bold;">${data.player === this.socket.id ? 'You' : 'Opponent'}:</span>
+                <span style="color: white;"> ${data.message}</span>
+            `;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    }
+
+    sendChatMessage(modal) {
+        const input = modal.querySelector('#chat-input');
+        const message = input.value.trim();
+        
+        if (message) {
+            this.socket.emit('sendMessage', message);
+            input.value = '';
+        }
+    }
+
+    showNotification(message) {
+        // Use your existing notification system or create a simple one
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #3366cc;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            z-index: 1001;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            animation: slideInRight 0.3s ease;
+            font-weight: bold;
+        `;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+}
+
+// Add multiplayer button to main game UI
+function addMultiplayerButton() {
+    // Check if button already exists
+    if (document.getElementById('multiplayer-btn')) return;
+
+    const multiplayerBtn = document.createElement('button');
+    multiplayerBtn.id = 'multiplayer-btn';
+    multiplayerBtn.className = 'nav-btn';
+    multiplayerBtn.textContent = '🎮 Multiplayer';
+    multiplayerBtn.style.background = 'linear-gradient(45deg, #9C27B0, #E91E63)';
+    
+    multiplayerBtn.addEventListener('click', () => {
+        console.log('Multiplayer button clicked');
+        const multiplayerManager = new MultiplayerManager();
+        multiplayerManager.connect();
+    });
+
+    // Add to your navigation menu
+    const navMenu = document.querySelector('.nav-menu');
+    if (navMenu) {
+        navMenu.appendChild(multiplayerBtn);
+    } else {
+        console.error('Nav menu not found');
+    }
+}
+
+// Initialize multiplayer when game loads
+document.addEventListener('DOMContentLoaded', () => {
+    addMultiplayerButton();
+});
 
 
 // Initialize when DOM is loaded
