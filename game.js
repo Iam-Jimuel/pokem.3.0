@@ -557,6 +557,11 @@ class MultiplayerManager {
                 this.showWaitingRoom(roomId);
             });
 
+            this.socket.on('roomJoined', (data) => {
+                this.currentRoom = data.roomId;
+                this.showWaitingRoom(data.roomId);
+            });
+
             this.socket.on('playerJoined', (data) => {
                 this.opponent = data.room.players.find(p => p.id !== this.socket.id);
                 this.updateWaitingRoom(data.room);
@@ -784,26 +789,38 @@ class MultiplayerManager {
     updateWaitingRoom(room) {
         if (!this.modal) return;
 
-        const opponent = room.players.find(p => p.id !== this.socket.id);
-        if (opponent) {
-            this.modal.querySelector('#opponent-name').textContent = `${opponent.name}`;
-            this.showNotification(`${opponent.name} joined the room!`);
-        }
+        const playersListContainer = this.modal.querySelector('.players-list');
+        if (!playersListContainer) return;
+
+        playersListContainer.innerHTML = '';
+
+        room.players.forEach(player => {
+            const isLocalPlayer = player.id === this.socket.id;
+            const playerItem = document.createElement('div');
+            playerItem.className = 'player-item';
+            playerItem.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; margin: 10px 0;';
+            playerItem.innerHTML = `
+                <span style="color: white;">${isLocalPlayer ? 'You' : player.name}</span>
+                <span style="color: ${player.ready ? '#4CAF50' : '#ff4444'};">${player.ready ? '✅ Ready' : '❌ Not Ready'}</span>
+            `;
+            playersListContainer.appendChild(playerItem);
+        });
+
+        this.showNotification(`${room.players.length} player(s) in the room.`);
     }
 
     updateReadyStatus(players) {
         if (!this.modal) return;
 
-        players.forEach(player => {
-            const statusElement = player.id === this.socket.id ? 
-                this.modal.querySelector('#player-ready-status') : 
-                this.modal.querySelector('#opponent-ready-status');
-            
-            if (statusElement) {
-                statusElement.textContent = player.ready ? '✅ Ready' : '❌ Not Ready';
-                statusElement.style.color = player.ready ? '#4CAF50' : '#ff4444';
-            }
-        });
+        // Re-use updateWaitingRoom to refresh player ready statuses
+        const roomPlayers = players || [];
+        if (roomPlayers.length === 0) return;
+
+        // Construct temp room object to use updateWaitingRoom
+        const tempRoom = {
+            players: roomPlayers
+        };
+        this.updateWaitingRoom(tempRoom);
     }
 
     startMultiplayerBattle(data) {

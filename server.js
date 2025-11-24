@@ -24,8 +24,9 @@ const players = new Map();
 
 // Battle rooms management
 class BattleRoom {
-    constructor(roomId, creator) {
+    constructor(roomId, creator, maxPlayers = 2) {
         this.roomId = roomId;
+        this.maxPlayers = maxPlayers;
         this.players = [{
             id: creator.id,
             name: creator.name,
@@ -48,7 +49,7 @@ class BattleRoom {
     }
 
     addPlayer(player) {
-        if (this.players.length < 2) {
+        if (this.players.length < this.maxPlayers) {
             this.players.push({
                 id: player.id,
                 name: player.name,
@@ -65,7 +66,7 @@ class BattleRoom {
     }
 
     isFull() {
-        return this.players.length === 2;
+        return this.players.length >= this.maxPlayers;
     }
 
     getOpponent(playerId) {
@@ -90,10 +91,12 @@ io.on('connection', (socket) => {
         try {
             console.log('Creating room for:', playerData);
             const roomId = generateRoomId();
+
+            // Create room with maxPlayers default 4 (or change as needed)
             const room = new BattleRoom(roomId, {
                 id: socket.id,
                 ...playerData
-            });
+            }, 4);
             rooms.set(roomId, room);
             
             socket.join(roomId);
@@ -128,10 +131,15 @@ io.on('connection', (socket) => {
             }
             
             // Add player to room
-            room.addPlayer({
+            const success = room.addPlayer({
                 id: socket.id,
                 ...playerData
             });
+
+            if (!success) {
+                socket.emit('error', 'Unable to join room');
+                return;
+            }
             
             socket.join(roomId);
             socket.emit('roomJoined', { roomId, success: true });
