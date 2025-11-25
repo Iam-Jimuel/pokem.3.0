@@ -182,21 +182,23 @@ io.on('connection', (socket) => {
             io.to(roomId).emit('playerReadyUpdate', playerRoom.players);
             
             console.log(`Player ${socket.id} ready in room ${roomId}. All ready: ${allReady}`);
-            
-            // If both players are ready, start battle
-            // if (allReady && playerRoom.isFull()) {
-            //     const player1 = playerRoom.players[0];
-            //     const player2 = playerRoom.players[1];
-                
-            //     const battleData = {
-            //         player1: player1,
-            //         player2: player2,
-            //         roomId: roomId
-            //     };
-                
-            //     io.to(roomId).emit('battleStarted', battleData);
-            //     console.log(`Battle started in room ${roomId}`);
-            // }
+
+            // Auto start battle if room is full (2 players) and all ready
+            if (playerRoom.players.length === 2 && allReady) {
+                playerRoom.battleState.battleStarted = true;
+
+                const battleData = {
+                    player1: playerRoom.players[0],
+                    player2: playerRoom.players[1],
+                    roomId: roomId,
+                    reason: 'auto_start',
+                    timestamp: Date.now()
+                };
+
+                console.log(`🚀 Auto starting battle in room ${roomId}`, battleData);
+
+                io.to(roomId).emit('battleStarted', battleData);
+            }
             
         } catch (error) {
             console.error('Error setting player ready:', error);
@@ -205,45 +207,60 @@ io.on('connection', (socket) => {
     });
 
     // New event handler for starting battle on demand
-    socket.on('startBattle', () => {
-        try {
-            let playerRoom = null;
-            let roomId = null;
-
-            for (const [id, room] of rooms.entries()) {
-                if (room.players.find(p => p.id === socket.id)) {
-                    playerRoom = room;
-                    roomId = id;
-                    break;
-                }
+    // Start battle manually - FIXED VERSION
+socket.on('startBattle', () => {
+    try {
+        let playerRoom = null;
+        let roomId = null;
+        
+        for (const [id, room] of rooms.entries()) {
+            if (room.players.find(p => p.id === socket.id)) {
+                playerRoom = room;
+                roomId = id;
+                break;
             }
-
-            if (!playerRoom) {
-                socket.emit('error', 'Not in a room');
-                return;
-            }
-
-            // Check if all players are ready
-            const allReady = playerRoom.players.every(p => p.ready);
-            if (!allReady) {
-                socket.emit('error', 'Not all players are ready');
-                return;
-            }
-
-            // Emit battleStarted event to room
-            const battleData = {
-                player1: playerRoom.players[0],
-                player2: playerRoom.players[1],
-                roomId: roomId
-            };
-
-            io.to(roomId).emit('battleStarted', battleData);
-            console.log(`Battle started in room ${roomId} by player ${socket.id}`);
-        } catch (error) {
-            console.error('Error starting battle:', error);
-            socket.emit('error', 'Failed to start battle');
         }
-    });
+        
+        if (!playerRoom) {
+            socket.emit('error', { message: 'Not in a room' });
+            return;
+        }
+
+        // Check if room is full
+        if (!playerRoom.isFull()) {
+            socket.emit('error', { message: 'Room is not full yet' });
+            return;
+        }
+
+        // Check if all players are ready
+        const allReady = playerRoom.players.every(p => p.ready);
+        if (!allReady) {
+            socket.emit('error', { message: 'Not all players are ready' });
+            return;
+        }
+
+        // Set battle as started
+        playerRoom.battleState.battleStarted = true;
+
+        // Emit battleStarted event to ALL players in room
+        const battleData = {
+            player1: playerRoom.players[0],
+            player2: playerRoom.players[1],
+            roomId: roomId,
+            reason: 'manual_start',
+            timestamp: Date.now()
+        };
+
+        console.log(`🚀 Starting battle in room ${roomId}`, battleData);
+        
+        // Send to ALL players in the room
+        io.to(roomId).emit('battleStarted', battleData);
+        
+    } catch (error) {
+        console.error('Error starting battle:', error);
+        socket.emit('error', { message: 'Failed to start battle', error: error.message });
+    }
+});
 
     // New event handler for starting battle on demand
     socket.on('startBattle', () => {

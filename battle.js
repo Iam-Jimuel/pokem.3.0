@@ -891,3 +891,222 @@ function initializeAttackButtons() {
 
 // Call this when battle starts
 initializeAttackButtons();
+
+// Multiplayer Battle System
+class MultiplayerBattle {
+    constructor() {
+        this.socket = io();
+        this.roomId = null;
+        this.battleData = null;
+        this.isMultiplayer = false;
+        
+        this.initializeMultiplayer();
+    }
+
+    initializeMultiplayer() {
+        // Check if this is a multiplayer battle
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode');
+        this.roomId = urlParams.get('room');
+        
+        if (mode === 'multiplayer' && this.roomId) {
+            this.isMultiplayer = true;
+            this.setupMultiplayer();
+        } else {
+            // Single player battle
+            new PokemonBattle();
+        }
+    }
+
+    setupMultiplayer() {
+        console.log('Initializing multiplayer battle for room:', this.roomId);
+        
+        // Show multiplayer status
+        document.getElementById('multiplayer-status').style.display = 'block';
+        document.getElementById('battle-room-id').textContent = this.roomId;
+        
+        // Get battle data from localStorage or server
+        const savedBattleData = localStorage.getItem('battleData');
+        if (savedBattleData) {
+            this.battleData = JSON.parse(savedBattleData);
+            this.initializeBattleFromData();
+        } else {
+            // Request battle data from server
+            this.socket.emit('getRoomInfo', this.roomId);
+        }
+
+        this.setupSocketEvents();
+    }
+
+    setupSocketEvents() {
+        // Battle events from server
+        this.socket.on('attackResult', (data) => {
+            this.handleOpponentAttack(data);
+        });
+
+        this.socket.on('battleActionUpdate', (data) => {
+            this.handleBattleAction(data);
+        });
+
+        this.socket.on('playerLeft', (data) => {
+            this.handlePlayerLeft(data);
+        });
+
+        this.socket.on('roomInfo', (data) => {
+            if (!data.error) {
+                this.battleData = data;
+                this.initializeBattleFromData();
+            }
+        });
+
+        this.socket.on('error', (data) => {
+            console.error('Battle error:', data);
+            this.addToLog(`Error: ${data.message}`);
+        });
+    }
+
+    initializeBattleFromData() {
+        if (!this.battleData) return;
+
+        // Determine if current player is player1 or player2
+        const currentPlayerId = this.socket.id;
+        let isPlayer1 = false;
+        
+        if (this.battleData.players) {
+            isPlayer1 = this.battleData.players[0].id === currentPlayerId;
+        } else if (this.battleData.player1 && this.battleData.player2) {
+            isPlayer1 = this.battleData.player1.id === currentPlayerId;
+        }
+
+        // Initialize battle state
+        this.battleState = {
+            isMultiplayer: true,
+            isPlayer1: isPlayer1,
+            playerPokemon: null,
+            opponentPokemon: null,
+            playerHealth: 100,
+            opponentHealth: 100,
+            playerMaxHealth: 100,
+            opponentMaxHealth: 100,
+            battleActive: true,
+            playerTurn: isPlayer1, // Player 1 goes first
+            battleLog: [],
+            roomId: this.roomId
+        };
+
+        this.setupPlayers();
+        this.setupEventListeners();
+        this.startMultiplayerBattle();
+    }
+
+    setupPlayers() {
+        // Set player and opponent based on multiplayer data
+        if (this.battleState.isPlayer1) {
+            this.battleState.playerPokemon = this.getPokemonData(this.battleData.player1.pokemon);
+            this.battleState.opponentPokemon = this.getPokemonData(this.battleData.player2.pokemon);
+            
+            document.getElementById('player-name').textContent = this.battleData.player1.name;
+            document.getElementById('opponent-name').textContent = this.battleData.player2.name;
+        } else {
+            this.battleState.playerPokemon = this.getPokemonData(this.battleData.player2.pokemon);
+            this.battleState.opponentPokemon = this.getPokemonData(this.battleData.player1.pokemon);
+            
+            document.getElementById('player-name').textContent = this.battleData.player2.name;
+            document.getElementById('opponent-name').textContent = this.battleData.player1.name;
+        }
+
+        // Set up Pokemon sprites and info
+        this.initializePokemonVisuals();
+    }
+
+    initializePokemonVisuals() {
+        // Player Pokemon
+        document.getElementById('player-pokemon-sprite').style.backgroundImage = 
+            `url('${this.battleState.playerPokemon.gif}')`;
+        document.getElementById('player-pokemon-name').textContent = this.battleState.playerPokemon.name;
+
+        // Opponent Pokemon
+        document.getElementById('opponent-pokemon-sprite').style.backgroundImage = 
+            `url('${this.battleState.opponentPokemon.gif}')`;
+        document.getElementById('opponent-pokemon-name').textContent = this.battleState.opponentPokemon.name;
+
+        // Calculate stats
+        this.battleState.playerMaxHealth = this.calculateHealth(this.battleState.playerPokemon);
+        this.battleState.opponentMaxHealth = this.calculateHealth(this.battleState.opponentPokemon);
+        this.battleState.playerHealth = this.battleState.playerMaxHealth;
+        this.battleState.opponentHealth = this.battleState.opponentMaxHealth;
+
+        this.updateHealthBars();
+    }
+
+    startMultiplayerBattle() {
+        this.addToLog(`Multiplayer battle started!`);
+        this.addToLog(`You are facing ${this.battleState.isPlayer1 ? this.battleData.player2.name : this.battleData.player1.name}!`);
+        
+        if (this.battleState.playerTurn) {
+            this.addToLog(`Your turn first!`);
+            this.enableControls();
+        } else {
+            this.addToLog(`Waiting for opponent's turn...`);
+            this.disableControls();
+        }
+    }
+
+    // Override player attack for multiplayer
+    playerAttack(attackType) {
+        if (!this.battleState.battleActive || !this.battleState.playerTurn) return;
+
+        this.battleState.playerTurn = false;
+        this.disableControls();
+
+        const damage = this.calculateDamage(attackType, true);
+        const isCritical = this.isCriticalHit(attackType);
+        const finalDamage = isCritical ? Math.floor(damage * 1.5) : damage;
+
+        // Send attack to server
+        this.socket.emit('playerAttack', {
+            moveType: attackType,
+            target: 'opponent',
+            damage: finalDamage,
+            roomId: this.roomId
+        });
+
+        // Local attack animation
+        this.animateAttack('player', attackType, isCritical);
+        
+        setTimeout(() => {
+            this.opponentTakeDamage(finalDamage, isCritical);
+            this.addToLog(`You used ${attackType} attack!`);
+        }, 600);
+    }
+
+    handleOpponentAttack(data) {
+        if (data.playerId === this.socket.id) return; // Ignore our own attacks
+
+        this.addToLog(`${data.playerName} used ${data.moveType} attack!`);
+        
+        this.animateAttack('opponent', data.moveType, false);
+        
+        setTimeout(() => {
+            this.playerTakeDamage(data.damage, false);
+            
+            // After opponent's attack, it becomes our turn
+            setTimeout(() => {
+                this.battleState.playerTurn = true;
+                this.enableControls();
+                this.addToLog(`Your turn!`);
+            }, 1000);
+        }, 600);
+    }
+
+    handlePlayerLeft(data) {
+        this.addToLog(`${data.playerName} left the battle. You win!`);
+        this.endBattle(true);
+    }
+
+}
+
+// Initialize appropriate battle type
+document.addEventListener('DOMContentLoaded', () => {
+    new MultiplayerBattle();
+});

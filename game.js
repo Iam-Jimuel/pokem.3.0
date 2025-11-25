@@ -189,11 +189,6 @@ async function simulateBlockchainTransaction(action, amount) {
     });
 }
 
-
-
-
-
-
 // Name Change Functionality
 class NameChangeManager {
     constructor() {
@@ -572,7 +567,20 @@ class MultiplayerManager {
             });
 
             this.socket.on('battleStarted', (data) => {
-                this.startMultiplayerBattle(data);
+                // Automatically redirect to battle page with multiplayer mode and room id
+                if (data && data.roomId) {
+                    // Close modal if open
+                    if (this.modal) {
+                        this.modal.style.display = 'none';
+                        this.modal.remove();
+                        this.modal = null;
+                    }
+                    // Redirect to battle.html with mode=multiplayer and room id
+                    window.location.href = `battle.html?mode=multiplayer&room=${encodeURIComponent(data.roomId)}`;
+                } else {
+                    // Fallback to old method
+                    this.startMultiplayerBattle(data);
+                }
             });
 
             this.socket.on('attackResult', (data) => {
