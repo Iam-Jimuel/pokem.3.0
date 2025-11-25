@@ -183,7 +183,7 @@ io.on('connection', (socket) => {
             
             console.log(`Player ${socket.id} ready in room ${roomId}. All ready: ${allReady}`);
 
-            // Auto start battle if room is full (2 players) and all ready
+            // Auto start battle if room is full (2 players) and all ready.
             if (playerRoom.players.length === 2 && allReady) {
                 playerRoom.battleState.battleStarted = true;
 
