@@ -15,7 +15,7 @@ const io = socketIo(server, {
     }
 });
 
-// Serve static files from current directory
+// Serve the static files from current directory
 app.use(express.static(__dirname));
 
 // Game state
