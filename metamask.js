@@ -40,7 +40,7 @@ class PokemonWeb3 {
 
     async init() {
         if (typeof window.ethereum !== 'undefined') {
-            console.log('✅ MetaMask is installed!');
+            console.log('MetaMask is installed!');
             this.provider = window.ethereum;
             
             const accounts = await this.provider.request({ method: 'eth_accounts' });
@@ -56,7 +56,7 @@ class PokemonWeb3 {
                 window.location.reload();
             });
         } else {
-            console.log('❌ Please install MetaMask!');
+            console.log('Please install MetaMask!');
             this.showMetaMaskPrompt();
         }
     }
@@ -108,10 +108,10 @@ class PokemonWeb3 {
                 this.signer
             );
             
-            console.log('✅ Smart contracts initialized');
+            console.log('Smart contracts initialized');
             return true;
         } catch (error) {
-            console.error('❌ Error setting up contracts:', error);
+            console.error('Error setting up contracts:', error);
             return false;
         }
     }
@@ -131,8 +131,8 @@ class PokemonWeb3 {
                 if (window.updateUI) window.updateUI();
                 if (window.updateCollectionInfo) window.updateCollectionInfo();
                 
-                console.log('🔄 Game synced with blockchain. Balance:', window.gameState.coins);
-                this.showNotification(`🔄 Synced: ${window.gameState.coins} POKE tokens`);
+                console.log('Game synced with blockchain. Balance:', window.gameState.coins);
+                this.showNotification(`Synced: ${window.gameState.coins} POKE tokens`);
             }
         } catch (error) {
             console.error('Error syncing with blockchain:', error);
@@ -143,7 +143,7 @@ class PokemonWeb3 {
         if (window.gameState) {
             window.gameState.coins = 0;
             if (window.updateUI) window.updateUI();
-            console.log('🔄 Game reset to zero (wallet disconnected)');
+            console.log('Game reset to zero (wallet disconnected)');
         }
     }
 
@@ -175,7 +175,7 @@ class PokemonWeb3 {
             await this.syncGameWithBlockchain();
             
             const tokens = ethAmount * 100;
-            this.showTransactionSuccess(`💰 Purchased ${tokens} POKE tokens!`);
+            this.showTransactionSuccess(`Purchased ${tokens} POKE tokens!`);
             return true;
         } catch (error) {
             console.error('Error buying tokens:', error);
@@ -197,7 +197,7 @@ class PokemonWeb3 {
             
             await this.syncGameWithBlockchain();
             
-            this.showTransactionSuccess('🎉 You won 100 POKE tokens!');
+            this.showTransactionSuccess('You won 100 POKE tokens!');
             return true;
         } catch (error) {
             console.error('Error processing win:', error);
@@ -218,7 +218,7 @@ class PokemonWeb3 {
             
             await this.syncGameWithBlockchain();
             
-            this.showTransactionSuccess('💸 Lost 25 POKE tokens from defeat');
+            this.showTransactionSuccess('Lost 25 POKE tokens from defeat');
             return true;
         } catch (error) {
             console.error('Error processing loss:', error);
@@ -251,7 +251,7 @@ class PokemonWeb3 {
             await approveTx.wait();
             
             // The actual deduction will happen in battleLoss() function
-            this.showTransactionSuccess('✅ Battle entry fee approved');
+            this.showTransactionSuccess('Battle entry fee approved');
             return true;
         } catch (error) {
             console.error('Error paying entry fee:', error);
@@ -308,21 +308,21 @@ class PokemonWeb3 {
     showMetaMaskPrompt() {
         const notification = document.createElement('div');
         notification.className = 'web3-notification error';
-        notification.innerHTML = '<span>❌ Please install MetaMask to use blockchain features</span>';
+        notification.innerHTML = '<span>Please install MetaMask to use blockchain features</span>';
         document.body.appendChild(notification);
         setTimeout(() => notification.remove(), 5000);
     }
 
     showConnectionError(message) {
-        this.showNotification(`❌ ${message}`, 'error');
+        this.showNotification(`${message}`, 'error');
     }
 
     showTransactionSuccess(message) {
-        this.showNotification(`✅ ${message}`, 'success');
+        this.showNotification(`${message}`, 'success');
     }
 
     showTransactionError(message) {
-        this.showNotification(`❌ ${message}`, 'error');
+        this.showNotification(`${message}`, 'error');
     }
 
     showNotification(message, type = 'info') {

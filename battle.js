@@ -7,6 +7,8 @@ class PokemonBattle {
         this.battleState = {
             playerPokemon: null,
             opponentPokemon: null,
+            playerTeam: [], // 4 pokemon
+            opponentTeam: [], // 4 pokemon
             playerHealth: 100,
             opponentHealth: 100,
             playerMaxHealth: 100,
@@ -17,6 +19,15 @@ class PokemonBattle {
             rewards: {
                 coins: 0,
                 exp: 0
+            },
+            roundRobin: {
+                playerPokemonIndex: 0,
+                opponentPokemonIndex: 0,
+                playerFaintedCount: 0,
+                opponentFaintedCount: 0,
+                totalRounds: 0,
+                playerAlivePokemon: new Set([0, 1, 2, 3, 4]), // Track alive Pokemon
+                opponentAlivePokemon: new Set([0, 1, 2, 3, 4]) // Track alive Pokemon
             }
         };
 
@@ -39,33 +50,81 @@ class PokemonBattle {
             document.getElementById('player-avatar').src = savedAvatar;
         }
 
-        // Initialize Pokemon
-        this.initializePokemon();
+        // Initialize Pokemon Teams
+        this.initializeTeams();
         this.updateUI();
     }
 
-    initializePokemon() {
-        // Get selected Pokemon from game state or use default
+    initializeTeams() {
+        // Get player's team from game state or create default team
         const gameState = JSON.parse(localStorage.getItem('pokemonGameState') || '{}');
-        const selectedPokemonId = gameState.selectedPokemon || 25; // Default to Pikachu
         
-        this.battleState.playerPokemon = this.getPokemonData(selectedPokemonId);
+        // Player team: 5 Pokemon (1 active + 4 reserves)
+        this.battleState.playerTeam = this.getPlayerTeam(gameState);
+        this.battleState.playerPokemon = this.battleState.playerTeam[0];
         
-        // Random opponent Pokemon (different from player's)
-        let opponentId;
-        do {
-            opponentId = Math.floor(Math.random() * 50) + 1;
-        } while (opponentId === selectedPokemonId);
-        
-        this.battleState.opponentPokemon = this.getPokemonData(opponentId);
+        // Opponent team: 5 random Pokemon
+        this.battleState.opponentTeam = this.generateOpponentTeam();
+        this.battleState.opponentPokemon = this.battleState.opponentTeam[0];
 
-        // Set up Pokemon sprites
-        document.getElementById('player-pokemon-sprite').style.backgroundImage = 
-            `url('${this.battleState.playerPokemon.gif}')`;
-        document.getElementById('opponent-pokemon-sprite').style.backgroundImage = 
-            `url('${this.battleState.opponentPokemon.gif}')`;
+        // Set up initial Pokemon sprites
+        this.updatePokemonSprites();
+        
+        // Display team panels
+        this.createTeamPanels();
+        
+        // Reset fainted status
+        this.resetFaintedVisuals();
+    }
 
-        // Update names and health
+    getPlayerTeam(gameState) {
+        let team = [];
+        
+        // Try to get team from game state
+        if (gameState.team && Array.isArray(gameState.team) && gameState.team.length > 0) {
+            // Use existing team, fill with default if less than 5
+            team = gameState.team.map(pokemonId => this.getPokemonData(pokemonId));
+            while (team.length < 5) {
+                team.push(this.getPokemonData(Math.floor(Math.random() * 50) + 1));
+            }
+        } else {
+            // Create default team
+            const defaultTeamIds = [25, 4, 7, 1, 16]; // Pikachu, Charmander, Squirtle, Bulbasaur, Pidgey
+            team = defaultTeamIds.map(id => this.getPokemonData(id));
+        }
+        
+        return team.slice(0, 5); // Ensure only 5 Pokemon
+    }
+
+    generateOpponentTeam() {
+        const team = [];
+        const usedIds = new Set();
+        
+        // Generate 5 unique Pokemon
+        while (team.length < 5) {
+            const randomId = Math.floor(Math.random() * 50) + 1;
+            if (!usedIds.has(randomId)) {
+                team.push(this.getPokemonData(randomId));
+                usedIds.add(randomId);
+            }
+        }
+        
+        return team;
+    }
+
+    updatePokemonSprites() {
+        // Clear any fainted classes first
+        const playerSprite = document.getElementById('player-pokemon-sprite');
+        const opponentSprite = document.getElementById('opponent-pokemon-sprite');
+        
+        playerSprite.classList.remove('fainted', 'taking-damage', 'critical-hit', 'attacking');
+        opponentSprite.classList.remove('fainted', 'taking-damage', 'critical-hit', 'attacking');
+        
+        // Set up active Pokemon sprites
+        playerSprite.style.backgroundImage = `url('${this.battleState.playerPokemon.gif}')`;
+        opponentSprite.style.backgroundImage = `url('${this.battleState.opponentPokemon.gif}')`;
+
+        // Update names
         document.getElementById('player-pokemon-name').textContent = this.battleState.playerPokemon.name;
         document.getElementById('opponent-pokemon-name').textContent = this.battleState.opponentPokemon.name;
 
@@ -74,86 +133,147 @@ class PokemonBattle {
         this.battleState.opponentMaxHealth = this.calculateHealth(this.battleState.opponentPokemon);
         this.battleState.playerHealth = this.battleState.playerMaxHealth;
         this.battleState.opponentHealth = this.battleState.opponentMaxHealth;
+        
+        // Add entry animation
+        playerSprite.classList.add('pokemon-entry');
+        opponentSprite.classList.add('pokemon-entry');
+        
+        setTimeout(() => {
+            playerSprite.classList.remove('pokemon-entry');
+            opponentSprite.classList.remove('pokemon-entry');
+        }, 600);
     }
 
+    resetFaintedVisuals() {
+        // Reset main battle sprites
+        document.getElementById('player-pokemon-sprite').classList.remove('fainted', 'taking-damage', 'critical-hit', 'attacking');
+        document.getElementById('opponent-pokemon-sprite').classList.remove('fainted', 'taking-damage', 'critical-hit', 'attacking');
+    }
 
+    createTeamPanels() {
+        const playerTeamPanel = document.getElementById('player-team-panel');
+        const opponentTeamPanel = document.getElementById('opponent-team-panel');
+        
+        // Clear existing panels
+        playerTeamPanel.innerHTML = '';
+        opponentTeamPanel.innerHTML = '';
+        
+        // Create player team panel
+        this.battleState.playerTeam.forEach((pokemon, index) => {
+            const pokemonElement = this.createTeamPokemonElement(pokemon, index === 0);
+            pokemonElement.addEventListener('click', () => this.switchPokemon(index, true));
+            playerTeamPanel.appendChild(pokemonElement);
+        });
+        
+        // Create opponent team panel (read-only)
+        this.battleState.opponentTeam.forEach((pokemon, index) => {
+            const pokemonElement = this.createTeamPokemonElement(pokemon, index === 0, false);
+            opponentTeamPanel.appendChild(pokemonElement);
+        });
+        
+        // Show team panels
+        playerTeamPanel.style.display = 'flex';
+        opponentTeamPanel.style.display = 'flex';
+    }
 
+    createTeamPokemonElement(pokemon, isActive = false, isPlayer = true) {
+        const element = document.createElement('div');
+        element.className = `team-pokemon ${isActive ? 'active' : 'reserve'} ${isPlayer ? 'player' : 'opponent'}`;
+        
+        element.innerHTML = `
+            <div class="team-pokemon-sprite" style="background-image: url('${pokemon.gif}')"></div>
+            <div class="team-pokemon-info">
+                <span class="team-pokemon-name">${pokemon.name}</span>
+                <span class="team-pokemon-type">${pokemon.type}</span>
+            </div>
+            ${isActive ? '<div class="active-indicator">⚡</div>' : ''}
+        `;
+        
+        return element;
+    }
 
-
-    
     getPokemonData(id) {
         const pokemonList = [
             { id: 1, name: "Bulbasaur", type: "Grass/Poison", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/bulbasaur.gif" },
-    { id: 2, name: "Ivysaur", type: "Grass/Poison", price: 800, gif: "https://projectpokemon.org/images/normal-sprite/ivysaur.gif" },
-    { id: 3, name: "Venusaur", type: "Grass/Poison", price: 1200, gif: "https://projectpokemon.org/images/normal-sprite/venusaur.gif" },
-    { id: 4, name: "Charmander", type: "Fire", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/charmander.gif" },
-    { id: 5, name: "Charmeleon", type: "Fire", price: 800, gif: "https://projectpokemon.org/images/normal-sprite/charmeleon.gif" },
-    { id: 6, name: "Charizard", type: "Fire/Flying", price: 1200, gif: "https://projectpokemon.org/images/normal-sprite/charizard.gif" },
-    { id: 7, name: "Squirtle", type: "Water", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/squirtle.gif" },
-    { id: 8, name: "Wartortle", type: "Water", price: 800, gif: "https://projectpokemon.org/images/normal-sprite/wartortle.gif" },
-    { id: 9, name: "Blastoise", type: "Water", price: 1200, gif: "https://projectpokemon.org/images/normal-sprite/blastoise.gif" },
-    { id: 10, name: "Caterpie", type: "Bug", price: 100, gif: "https://projectpokemon.org/images/normal-sprite/caterpie.gif" },
-    { id: 11, name: "Metapod", type: "Bug", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/metapod.gif" },
-    { id: 12, name: "Butterfree", type: "Bug/Flying", price: 600, gif: "https://projectpokemon.org/images/normal-sprite/butterfree.gif" },
-    { id: 13, name: "Weedle", type: "Bug/Poison", price: 100, gif: "https://projectpokemon.org/images/normal-sprite/weedle.gif" },
-    { id: 14, name: "Kakuna", type: "Bug/Poison", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/kakuna.gif" },
-    { id: 15, name: "Beedrill", type: "Bug/Poison", price: 600, gif: "https://projectpokemon.org/images/normal-sprite/beedrill.gif" },
-    { id: 16, name: "Pidgey", type: "Normal/Flying", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/pidgey.gif" },
-    { id: 17, name: "Pidgeotto", type: "Normal/Flying", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/pidgeotto.gif" },
-    { id: 18, name: "Pidgeot", type: "Normal/Flying", price: 900, gif: "https://projectpokemon.org/images/normal-sprite/pidgeot.gif" },
-    { id: 19, name: "Rattata", type: "Normal", price: 150, gif: "https://projectpokemon.org/images/normal-sprite/rattata.gif" },
-    { id: 20, name: "Raticate", type: "Normal", price: 400, gif: "https://projectpokemon.org/images/normal-sprite/raticate.gif" },
-    { id: 21, name: "Spearow", type: "Normal/Flying", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/spearow.gif" },
-    { id: 22, name: "Fearow", type: "Normal/Flying", price: 600, gif: "https://projectpokemon.org/images/normal-sprite/fearow.gif" },
-    { id: 23, name: "Ekans", type: "Poison", price: 300, gif: "https://projectpokemon.org/images/normal-sprite/ekans.gif" },
-    { id: 24, name: "Arbok", type: "Poison", price: 700, gif: "https://projectpokemon.org/images/normal-sprite/arbok.gif" },
-    { id: 25, name: "Pikachu", type: "Electric", price: 800, gif: "https://projectpokemon.org/images/normal-sprite/pikachu.gif" },
-    { id: 26, name: "Raichu", type: "Electric", price: 1100, gif: "https://projectpokemon.org/images/normal-sprite/raichu.gif" },
-    { id: 27, name: "Sandshrew", type: "Ground", price: 300, gif: "https://projectpokemon.org/images/normal-sprite/sandshrew.gif" },
-    { id: 28, name: "Sandslash", type: "Ground", price: 700, gif: "https://projectpokemon.org/images/normal-sprite/sandslash.gif" },
-    { id: 29, name: "Nidoran♀", type: "Poison", price: 350, gif: "https://projectpokemon.org/home/uploads/monthly_2017_11/large.Animated.gif.f2f8eadc8800f8ef17b706e10f99529e.gif" },
-    { id: 30, name: "Clefairy", type: "Fairy", price: 400, gif: "https://projectpokemon.org/images/normal-sprite/clefairy.gif" },
-    { id: 31, name: "Clefable", type: "Fairy", price: 900, gif: "https://projectpokemon.org/images/normal-sprite/clefable.gif" },
-    { id: 32, name: "Vulpix", type: "Fire", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/vulpix.gif" },
-    { id: 33, name: "Ninetales", type: "Fire", price: 1000, gif: "https://projectpokemon.org/images/normal-sprite/ninetales.gif" },
-    { id: 34, name: "Jigglypuff", type: "Normal/Fairy", price: 400, gif: "https://projectpokemon.org/images/normal-sprite/jigglypuff.gif" },
-    { id: 35, name: "Wigglytuff", type: "Normal/Fairy", price: 900, gif: "https://projectpokemon.org/images/normal-sprite/wigglytuff.gif" },
-    { id: 36, name: "Zubat", type: "Poison/Flying", price: 150, gif: "https://projectpokemon.org/images/normal-sprite/zubat.gif" },
-    { id: 37, name: "Golbat", type: "Poison/Flying", price: 600, gif: "https://projectpokemon.org/images/normal-sprite/golbat.gif" },
-    { id: 38, name: "Oddish", type: "Grass/Poison", price: 250, gif: "https://projectpokemon.org/images/normal-sprite/oddish.gif" },
-    { id: 39, name: "Gloom", type: "Grass/Poison", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/gloom.gif" },
-    { id: 40, name: "Vileplume", type: "Grass/Poison", price: 900, gif: "https://projectpokemon.org/images/normal-sprite/vileplume.gif" },
-    { id: 41, name: "Paras", type: "Bug/Grass", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/paras.gif" },
-    { id: 42, name: "Parasect", type: "Bug/Grass", price: 600, gif: "https://projectpokemon.org/images/normal-sprite/parasect.gif" },
-    { id: 43, name: "Venonat", type: "Bug/Poison", price: 300, gif: "https://projectpokemon.org/images/normal-sprite/venonat.gif" },
-    { id: 44, name: "Venomoth", type: "Bug/Poison", price: 700, gif: "https://projectpokemon.org/images/normal-sprite/venomoth.gif" },
-    { id: 45, name: "Diglett", type: "Ground", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/diglett.gif" },
-       {id: 46, name: "Snoorlax", type: "Happy", price: 500, gif: "https://projectpokemon.org/home/uploads/monthly_2018_05/large.ShinySnorlax.Gif.a3f81dc2af71384a08a36aae27ac67d1.Gif"} 
-];
+            { id: 2, name: "Ivysaur", type: "Grass/Poison", price: 800, gif: "https://projectpokemon.org/images/normal-sprite/ivysaur.gif" },
+            { id: 3, name: "Venusaur", type: "Grass/Poison", price: 1200, gif: "https://projectpokemon.org/images/normal-sprite/venusaur.gif" },
+            { id: 4, name: "Charmander", type: "Fire", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/charmander.gif" },
+            { id: 5, name: "Charmeleon", type: "Fire", price: 800, gif: "https://projectpokemon.org/images/normal-sprite/charmeleon.gif" },
+            { id: 6, name: "Charizard", type: "Fire/Flying", price: 1200, gif: "https://projectpokemon.org/images/normal-sprite/charizard.gif" },
+            { id: 7, name: "Squirtle", type: "Water", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/squirtle.gif" },
+            { id: 8, name: "Wartortle", type: "Water", price: 800, gif: "https://projectpokemon.org/images/normal-sprite/wartortle.gif" },
+            { id: 9, name: "Blastoise", type: "Water", price: 1200, gif: "https://projectpokemon.org/images/normal-sprite/blastoise.gif" },
+            { id: 10, name: "Caterpie", type: "Bug", price: 100, gif: "https://projectpokemon.org/images/normal-sprite/caterpie.gif" },
+            { id: 11, name: "Metapod", type: "Bug", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/metapod.gif" },
+            { id: 12, name: "Butterfree", type: "Bug/Flying", price: 600, gif: "https://projectpokemon.org/images/normal-sprite/butterfree.gif" },
+            { id: 13, name: "Weedle", type: "Bug/Poison", price: 100, gif: "https://projectpokemon.org/images/normal-sprite/weedle.gif" },
+            { id: 14, name: "Kakuna", type: "Bug/Poison", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/kakuna.gif" },
+            { id: 15, name: "Beedrill", type: "Bug/Poison", price: 600, gif: "https://projectpokemon.org/images/normal-sprite/beedrill.gif" },
+            { id: 16, name: "Pidgey", type: "Normal/Flying", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/pidgey.gif" },
+            { id: 17, name: "Pidgeotto", type: "Normal/Flying", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/pidgeotto.gif" },
+            { id: 18, name: "Pidgeot", type: "Normal/Flying", price: 900, gif: "https://projectpokemon.org/images/normal-sprite/pidgeot.gif" },
+            { id: 19, name: "Rattata", type: "Normal", price: 150, gif: "https://projectpokemon.org/images/normal-sprite/rattata.gif" },
+            { id: 20, name: "Raticate", type: "Normal", price: 400, gif: "https://projectpokemon.org/images/normal-sprite/raticate.gif" },
+            { id: 21, name: "Spearow", type: "Normal/Flying", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/spearow.gif" },
+            { id: 22, name: "Fearow", type: "Normal/Flying", price: 600, gif: "https://projectpokemon.org/images/normal-sprite/fearow.gif" },
+            { id: 23, name: "Ekans", type: "Poison", price: 300, gif: "https://projectpokemon.org/images/normal-sprite/ekans.gif" },
+            { id: 24, name: "Arbok", type: "Poison", price: 700, gif: "https://projectpokemon.org/images/normal-sprite/arbok.gif" },
+            { id: 25, name: "Pikachu", type: "Electric", price: 800, gif: "https://projectpokemon.org/images/normal-sprite/pikachu.gif" },
+            { id: 26, name: "Raichu", type: "Electric", price: 1100, gif: "https://projectpokemon.org/images/normal-sprite/raichu.gif" },
+            { id: 27, name: "Sandshrew", type: "Ground", price: 300, gif: "https://projectpokemon.org/images/normal-sprite/sandshrew.gif" },
+            { id: 28, name: "Sandslash", type: "Ground", price: 700, gif: "https://projectpokemon.org/images/normal-sprite/sandslash.gif" },
+            { id: 29, name: "Nidoran♀", type: "Poison", price: 350, gif: "https://projectpokemon.org/home/uploads/monthly_2017_11/large.Animated.gif.f2f8eadc8800f8ef17b706e10f99529e.gif" },
+            { id: 30, name: "Clefairy", type: "Fairy", price: 400, gif: "https://projectpokemon.org/images/normal-sprite/clefairy.gif" },
+            { id: 31, name: "Clefable", type: "Fairy", price: 900, gif: "https://projectpokemon.org/images/normal-sprite/clefable.gif" },
+            { id: 32, name: "Vulpix", type: "Fire", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/vulpix.gif" },
+            { id: 33, name: "Ninetales", type: "Fire", price: 1000, gif: "https://projectpokemon.org/images/normal-sprite/ninetales.gif" },
+            { id: 34, name: "Jigglypuff", type: "Normal/Fairy", price: 400, gif: "https://projectpokemon.org/images/normal-sprite/jigglypuff.gif" },
+            { id: 35, name: "Wigglytuff", type: "Normal/Fairy", price: 900, gif: "https://projectpokemon.org/images/normal-sprite/wigglytuff.gif" },
+            { id: 36, name: "Zubat", type: "Poison/Flying", price: 150, gif: "https://projectpokemon.org/images/normal-sprite/zubat.gif" },
+            { id: 37, name: "Golbat", type: "Poison/Flying", price: 600, gif: "https://projectpokemon.org/images/normal-sprite/golbat.gif" },
+            { id: 38, name: "Oddish", type: "Grass/Poison", price: 250, gif: "https://projectpokemon.org/images/normal-sprite/oddish.gif" },
+            { id: 39, name: "Gloom", type: "Grass/Poison", price: 500, gif: "https://projectpokemon.org/images/normal-sprite/gloom.gif" },
+            { id: 40, name: "Vileplume", type: "Grass/Poison", price: 900, gif: "https://projectpokemon.org/images/normal-sprite/vileplume.gif" },
+            { id: 41, name: "Paras", type: "Bug/Grass", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/paras.gif" },
+            { id: 42, name: "Parasect", type: "Bug/Grass", price: 600, gif: "https://projectpokemon.org/images/normal-sprite/parasect.gif" },
+            { id: 43, name: "Venonat", type: "Bug/Poison", price: 300, gif: "https://projectpokemon.org/images/normal-sprite/venonat.gif" },
+            { id: 44, name: "Venomoth", type: "Bug/Poison", price: 700, gif: "https://projectpokemon.org/images/normal-sprite/venomoth.gif" },
+            { id: 45, name: "Diglett", type: "Ground", price: 200, gif: "https://projectpokemon.org/images/normal-sprite/diglett.gif" },
+            { id: 46, name: "Snoorlax", type: "Happy", price: 500, gif: "https://projectpokemon.org/home/uploads/monthly_2018_05/large.ShinySnorlax.Gif.a3f81dc2af71384a08a36aae27ac67d1.Gif" }
+        ];
         
         return pokemonList.find(p => p.id === id) || pokemonList[0];
     }
 
     calculateHealth(pokemon) {
-        // Base health calculation based on Pokemon stats
         return 80 + (pokemon.price / 10);
     }
 
     startBattle() {
         this.battleState.battleActive = true;
-        this.addToLog(`A wild ${this.battleState.opponentPokemon.name} appeared!`);
-        this.addToLog(`Go! ${this.battleState.playerPokemon.name}!`);
+        this.addToLog(`Round Robin Battle Start!`);
+        this.addToLog(`You sent out ${this.battleState.playerPokemon.name}!`);
+        this.addToLog(`Opponent sent out ${this.battleState.opponentPokemon.name}!`);
         
         // Enable battle controls
         document.getElementById('battle-controls').style.opacity = '1';
         document.getElementById('battle-controls').style.pointerEvents = 'all';
+        
+        // Show switch Pokemon button
+        document.getElementById('switch-btn').style.display = 'block';
+        
+        // Make sure controls are enabled
+        this.enableControls();
     }
 
     setupEventListeners() {
         // Attack buttons
         document.querySelectorAll('.attack-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                if (!this.battleState.battleActive || !this.battleState.playerTurn) return;
+                if (!this.battleState.battleActive || !this.battleState.playerTurn) {
+                    console.log("Can't attack: battleActive=", this.battleState.battleActive, "playerTurn=", this.battleState.playerTurn);
+                    return;
+                }
                 
                 const attackType = e.currentTarget.dataset.type;
                 this.playerAttack(attackType);
@@ -169,6 +289,10 @@ class PokemonBattle {
             this.useItem();
         });
 
+        document.getElementById('switch-btn').addEventListener('click', () => {
+            this.showSwitchMenu();
+        });
+
         // Result buttons
         document.getElementById('rematch-btn').addEventListener('click', () => {
             this.rematch();
@@ -180,7 +304,10 @@ class PokemonBattle {
     }
 
     playerAttack(attackType) {
-        if (!this.battleState.battleActive) return;
+        if (!this.battleState.battleActive || !this.battleState.playerTurn) {
+            console.log("Attack prevented: battleActive=", this.battleState.battleActive, "playerTurn=", this.battleState.playerTurn);
+            return;
+        }
 
         this.battleState.playerTurn = false;
         this.disableControls();
@@ -199,7 +326,7 @@ class PokemonBattle {
                 if (this.battleState.opponentHealth > 0) {
                     this.opponentAttack();
                 } else {
-                    this.endBattle(true);
+                    this.handlePokemonFainted(false); // Opponent Pokemon fainted
                 }
             }, 1000);
         }, 600);
@@ -220,12 +347,221 @@ class PokemonBattle {
             setTimeout(() => {
                 if (this.battleState.playerHealth > 0) {
                     this.battleState.playerTurn = true;
-                    this.enableControls();
+                    this.enableControls(); 
+                    this.addToLog(`Your turn!`);
                 } else {
-                    this.endBattle(false);
+                    this.handlePokemonFainted(true); // Player Pokemon fainted
                 }
             }, 1000);
         }, 600);
+    }
+
+    handlePokemonFainted(isPlayer) {
+        if (isPlayer) {
+            this.battleState.roundRobin.playerFaintedCount++;
+            const faintedIndex = this.battleState.roundRobin.playerPokemonIndex;
+            this.battleState.roundRobin.playerAlivePokemon.delete(faintedIndex);
+            this.addToLog(`${this.battleState.playerPokemon.name} fainted!`);
+            
+            // Check if player has remaining Pokemon
+            if (this.battleState.roundRobin.playerAlivePokemon.size === 0) {
+                this.endBattle(false);
+                return;
+            }
+            
+            // Automatically switch to next available Pokemon
+            setTimeout(() => {
+                this.autoSwitchPokemon(true);
+            }, 1500);
+        } else {
+            this.battleState.roundRobin.opponentFaintedCount++;
+            const faintedIndex = this.battleState.roundRobin.opponentPokemonIndex;
+            this.battleState.roundRobin.opponentAlivePokemon.delete(faintedIndex);
+            this.addToLog(`${this.battleState.opponentPokemon.name} fainted!`);
+            
+            // Check if opponent has remaining Pokemon
+            if (this.battleState.roundRobin.opponentAlivePokemon.size === 0) {
+                this.endBattle(true);
+                return;
+            }
+            
+            // Opponent switches to next Pokemon
+            setTimeout(() => {
+                this.autoSwitchPokemon(false);
+                
+                // Player's turn after opponent switches
+                setTimeout(() => {
+                    this.battleState.playerTurn = true;
+                    this.enableControls(); 
+                    this.addToLog(`Your turn!`);
+                }, 1000);
+            }, 1500);
+        }
+    }
+
+    autoSwitchPokemon(isPlayer) {
+        if (isPlayer) {
+            // Find next available player Pokemon
+            for (let i = 0; i < 5; i++) {
+                if (this.battleState.roundRobin.playerAlivePokemon.has(i) && 
+                    i !== this.battleState.roundRobin.playerPokemonIndex) {
+                    this.switchPokemon(i, true, true);
+                    return;
+                }
+            }
+        } else {
+            // Opponent switches to next alive Pokemon
+            for (let i = 0; i < 5; i++) {
+                if (this.battleState.roundRobin.opponentAlivePokemon.has(i) && 
+                    i !== this.battleState.roundRobin.opponentPokemonIndex) {
+                    this.switchPokemon(i, false, true);
+                    return;
+                }
+            }
+        }
+    }
+
+    switchPokemon(index, isPlayer, isAuto = false) {
+        if (!isAuto && !this.battleState.playerTurn) {
+            this.addToLog("Cannot switch Pokemon now!");
+            return;
+        }
+
+        if (isPlayer) {
+            // Check if Pokemon is alive
+            if (!this.battleState.roundRobin.playerAlivePokemon.has(index)) {
+                this.addToLog(`${this.battleState.playerTeam[index].name} has fainted!`);
+                return;
+            }
+
+            // Validate switch
+            if (index === this.battleState.roundRobin.playerPokemonIndex) {
+                this.addToLog(`${this.battleState.playerPokemon.name} is already active!`);
+                return;
+            }
+
+            // Update active Pokemon
+            this.battleState.roundRobin.playerPokemonIndex = index;
+            this.battleState.playerPokemon = this.battleState.playerTeam[index];
+            
+            // Reset health for new Pokemon
+            this.battleState.playerMaxHealth = this.calculateHealth(this.battleState.playerPokemon);
+            this.battleState.playerHealth = this.battleState.playerMaxHealth;
+            
+            // Update UI
+            this.updatePokemonSprites();
+            this.updateTeamPanel();
+            
+            if (!isAuto) {
+                this.addToLog(`Go! ${this.battleState.playerPokemon.name}!`);
+                
+                // Opponent gets to attack after player switches
+                setTimeout(() => {
+                    this.opponentAttack();
+                }, 1000);
+            } else {
+                // auto switch 
+                this.addToLog(`Go! ${this.battleState.playerPokemon.name}!`);
+                
+                // Enable controls for the player's turn
+                setTimeout(() => {
+                    this.battleState.playerTurn = true;
+                    this.enableControls(); // Enable controls after auto-switch
+                    this.addToLog(`Your turn!`);
+                }, 1000);
+            }
+        } else {
+            // Opponent switch
+            this.battleState.roundRobin.opponentPokemonIndex = index;
+            this.battleState.opponentPokemon = this.battleState.opponentTeam[index];
+            
+            // Reset health for new Pokemon
+            this.battleState.opponentMaxHealth = this.calculateHealth(this.battleState.opponentPokemon);
+            this.battleState.opponentHealth = this.battleState.opponentMaxHealth;
+            
+            // Update UI
+            this.updatePokemonSprites();
+            this.updateTeamPanel();
+            
+            this.addToLog(`Opponent sent out ${this.battleState.opponentPokemon.name}!`);
+        }
+    }
+
+    showSwitchMenu() {
+        if (!this.battleState.playerTurn) {
+            this.addToLog("Cannot switch Pokemon now!");
+            return;
+        }
+
+        const switchMenu = document.getElementById('switch-menu');
+        const switchList = document.getElementById('switch-list');
+        
+        // Clear existing list
+        switchList.innerHTML = '';
+        
+        // Create switch options for alive reserve Pokemon
+        let hasAlivePokemon = false;
+        this.battleState.playerTeam.forEach((pokemon, index) => {
+            if (index !== this.battleState.roundRobin.playerPokemonIndex && 
+                this.battleState.roundRobin.playerAlivePokemon.has(index)) {
+                const switchItem = document.createElement('div');
+                switchItem.className = 'switch-item';
+                switchItem.innerHTML = `
+                    <div class="switch-sprite" style="background-image: url('${pokemon.gif}')"></div>
+                    <div class="switch-info">
+                        <span class="switch-name">${pokemon.name}</span>
+                        <span class="switch-type">${pokemon.type}</span>
+                    </div>
+                `;
+                
+                switchItem.addEventListener('click', () => {
+                    this.switchPokemon(index, true);
+                    switchMenu.style.display = 'none';
+                });
+                
+                switchList.appendChild(switchItem);
+                hasAlivePokemon = true;
+            }
+        });
+        
+        if (!hasAlivePokemon) {
+            const noPokemon = document.createElement('div');
+            noPokemon.className = 'switch-item';
+            noPokemon.innerHTML = `<div style="color: #aaa; text-align: center; width: 100%;">No available Pokemon to switch!</div>`;
+            switchList.appendChild(noPokemon);
+        }
+        
+        // Show switch menu
+        switchMenu.style.display = 'block';
+    }
+
+    updateTeamPanel() {
+        // Update player team panel
+        const playerTeamElements = document.querySelectorAll('#player-team-panel .team-pokemon');
+        playerTeamElements.forEach((element, index) => {
+            element.classList.toggle('active', index === this.battleState.roundRobin.playerPokemonIndex);
+            element.classList.toggle('fainted', !this.battleState.roundRobin.playerAlivePokemon.has(index));
+            
+            // Update active indicator
+            const indicator = element.querySelector('.active-indicator');
+            if (indicator) {
+                indicator.style.display = index === this.battleState.roundRobin.playerPokemonIndex ? 'block' : 'none';
+            }
+            
+            // Update cursor
+            if (this.battleState.roundRobin.playerAlivePokemon.has(index)) {
+                element.style.cursor = 'pointer';
+            } else {
+                element.style.cursor = 'not-allowed';
+            }
+        });
+        
+        // Update opponent team panel
+        const opponentTeamElements = document.querySelectorAll('#opponent-team-panel .team-pokemon');
+        opponentTeamElements.forEach((element, index) => {
+            element.classList.toggle('active', index === this.battleState.roundRobin.opponentPokemonIndex);
+            element.classList.toggle('fainted', !this.battleState.roundRobin.opponentAlivePokemon.has(index));
+        });
     }
 
     calculateDamage(attackType, isPlayer) {
@@ -266,7 +602,6 @@ class PokemonBattle {
 
         if (this.battleState.playerHealth === 0) {
             playerSprite.classList.add('fainted');
-            this.addToLog(`${this.battleState.playerPokemon.name} fainted!`);
         }
     }
 
@@ -286,7 +621,6 @@ class PokemonBattle {
 
         if (this.battleState.opponentHealth === 0) {
             opponentSprite.classList.add('fainted');
-            this.addToLog(`${this.battleState.opponentPokemon.name} fainted!`);
         }
     }
 
@@ -339,9 +673,9 @@ class PokemonBattle {
         document.getElementById('opponent-health-bar').style.width = `${opponentHealthPercent}%`;
 
         document.getElementById('player-health-text').textContent = 
-            `${this.battleState.playerHealth}/${this.battleState.playerMaxHealth}`;
+            `${Math.round(this.battleState.playerHealth)}/${Math.round(this.battleState.playerMaxHealth)}`;
         document.getElementById('opponent-health-text').textContent = 
-            `${this.battleState.opponentHealth}/${this.battleState.opponentMaxHealth}`;
+            `${Math.round(this.battleState.opponentHealth)}/${Math.round(this.battleState.opponentMaxHealth)}`;
 
         // Change color based on health percentage
         this.updateHealthBarColor('player', playerHealthPercent);
@@ -360,85 +694,104 @@ class PokemonBattle {
     }
 
     endBattle(playerWon) {
-    this.battleState.battleActive = false;
-    this.disableControls();
+        this.battleState.battleActive = false;
+        this.disableControls();
 
-    // Calculate rewards/penalties
-    if (playerWon) {
-        this.battleState.rewards.coins = WIN_REWARD;
-    } else {
-        this.battleState.rewards.coins = -LOSS_PENALTY;
+        // Calculate rewards/penalties
+        if (playerWon) {
+            this.battleState.rewards.coins = WIN_REWARD;
+            this.battleState.rewards.exp = 100;
+            this.addToLog(`You won the Round Robin battle!`);
+        } else {
+            this.battleState.rewards.coins = -LOSS_PENALTY;
+            this.addToLog(`You lost the Round Robin battle!`);
+        }
+
+        setTimeout(() => {
+            this.showBattleResult(playerWon);
+            this.saveBattleResult(playerWon);
+        }, 1500);
     }
 
-    setTimeout(() => {
-        this.showBattleResult(playerWon);
-        this.saveBattleResult(playerWon);
-    }, 1500);
-}
-
-// Add this new function to save battle results
-saveBattleResult(playerWon) {
-    if (playerWon) {
-        localStorage.setItem('battleResult', 'win');
-        localStorage.setItem('coinsEarned', WIN_REWARD.toString());
-    } else {
-        localStorage.setItem('battleResult', 'lose');
-        localStorage.setItem('coinsLost', LOSS_PENALTY.toString());
+    saveBattleResult(playerWon) {
+        if (playerWon) {
+            localStorage.setItem('battleResult', 'win');
+            localStorage.setItem('coinsEarned', WIN_REWARD.toString());
+        } else {
+            localStorage.setItem('battleResult', 'lose');
+            localStorage.setItem('coinsLost', LOSS_PENALTY.toString());
+        }
     }
-}
 
-    // Update the showBattleResult function to show penalties
-showBattleResult(playerWon) {
-    const modal = document.getElementById('battle-modal');
-    const resultHeader = document.getElementById('result-header');
-    const resultMessage = document.getElementById('result-message');
-    const rewardsDiv = document.getElementById('rewards');
+    showBattleResult(playerWon) {
+        const modal = document.getElementById('battle-modal');
+        const resultHeader = document.getElementById('result-header');
+        const resultMessage = document.getElementById('result-message');
+        const rewardsDiv = document.getElementById('rewards');
 
-    modal.style.display = 'flex';
-    
-    if (playerWon) {
-        modal.className = 'battle-modal victory';
-        resultHeader.innerHTML = '<h2>Victory!</h2>';
-        resultMessage.textContent = `Congratulations! Your ${this.battleState.playerPokemon.name} defeated ${this.battleState.opponentPokemon.name}!`;
+        modal.style.display = 'flex';
         
-        rewardsDiv.innerHTML = `
-            <div class="reward-item">
-                <span>Coins Earned:</span>
-                <span class="reward-amount">+🪙 ${WIN_REWARD}</span>
-            </div>
-            <div class="reward-item">
-                <span>Experience:</span>
-                <span class="reward-amount">⭐ 100</span>
-            </div>
-        `;
-        this.updatePlayerCoins(WIN_REWARD);
-        this.playSound('win');
-    } else {
-        modal.className = 'battle-modal defeat';
-        resultHeader.innerHTML = '<h2>Defeat!</h2>';
-        resultMessage.textContent = `Your ${this.battleState.playerPokemon.name} was defeated!`;
+        // Add team summary
+        const playerFainted = 5 - this.battleState.roundRobin.playerAlivePokemon.size;
+        const opponentFainted = 5 - this.battleState.roundRobin.opponentAlivePokemon.size;
         
-        rewardsDiv.innerHTML = `
-            <div class="reward-item">
-                <span>Coins Lost:</span>
-                <span class="reward-amount" style="color: #ff4444;">-🪙 ${LOSS_PENALTY}</span>
-            </div>
-            <div class="reward-item">
-                <span>Battle Fee:</span>
-                <span class="reward-amount" style="color: #ff4444;">-🪙 ${BATTLE_ENTRY_FEE}</span>
-            </div>
-        `;
+        if (playerWon) {
+            modal.className = 'battle-modal victory';
+            resultHeader.innerHTML = '<h2>Victory!</h2>';
+            resultMessage.textContent = `You defeated all opponent Pokemon!`;
+            
+            rewardsDiv.innerHTML = `
+                <div class="reward-item">
+                    <span>Coins Earned:</span>
+                    <span class="reward-amount">+🪙 ${WIN_REWARD}</span>
+                </div>
+                <div class="reward-item">
+                    <span>Experience:</span>
+                    <span class="reward-amount">⭐ 100</span>
+                </div>
+                <div class="reward-item">
+                    <span>Opponent Pokemon Defeated:</span>
+                    <span class="reward-amount">${opponentFainted}/5</span>
+                </div>
+                <div class="reward-item">
+                    <span>Your Pokemon Remaining:</span>
+                    <span class="reward-amount">${this.battleState.roundRobin.playerAlivePokemon.size}/5</span>
+                </div>
+            `;
+            this.updatePlayerCoins(WIN_REWARD);
+            this.playSound('win');
+        } else {
+            modal.className = 'battle-modal defeat';
+            resultHeader.innerHTML = '<h2>Defeat!</h2>';
+            resultMessage.textContent = `You defeated ${opponentFainted} opponent Pokemon.`;
+            
+            rewardsDiv.innerHTML = `
+                <div class="reward-item">
+                    <span>Coins Lost:</span>
+                    <span class="reward-amount" style="color: #ff4444;">-🪙 ${LOSS_PENALTY}</span>
+                </div>
+                <div class="reward-item">
+                    <span>Battle Fee:</span>
+                    <span class="reward-amount" style="color: #ff4444;">-🪙 ${BATTLE_ENTRY_FEE}</span>
+                </div>
+                <div class="reward-item">
+                    <span>Opponent Pokemon Defeated:</span>
+                    <span class="reward-amount">${opponentFainted}/5</span>
+                </div>
+                <div class="reward-item">
+                    <span>Your Pokemon Remaining:</span>
+                    <span class="reward-amount">${this.battleState.roundRobin.playerAlivePokemon.size}/5</span>
+                </div>
+            `;
 
-        this.updatePlayerCoins(-LOSS_PENALTY);
-        this.playSound('lose');
+            this.updatePlayerCoins(-LOSS_PENALTY);
+            this.playSound('lose');
+        }
     }
-}
 
     updatePlayerCoins(coins) {
-    // This will be handled by the main game when returning from battle
-    // We just save the result to localStorage
-    console.log(`Coin update: ${coins}`);
-}
+        console.log(`Coin update: ${coins}`);
+    }
 
     fleeBattle() {
         if (!this.battleState.battleActive) return;
@@ -459,6 +812,7 @@ showBattleResult(playerWon) {
 
     rematch() {
         document.getElementById('battle-modal').style.display = 'none';
+        document.getElementById('switch-menu').style.display = 'none';
         
         // Reset battle state
         this.battleState.playerHealth = this.battleState.playerMaxHealth;
@@ -466,12 +820,26 @@ showBattleResult(playerWon) {
         this.battleState.battleActive = true;
         this.battleState.playerTurn = true;
         this.battleState.battleLog = [];
+        this.battleState.roundRobin = {
+            playerPokemonIndex: 0,
+            opponentPokemonIndex: 0,
+            playerFaintedCount: 0,
+            opponentFaintedCount: 0,
+            totalRounds: 0,
+            playerAlivePokemon: new Set([0, 1, 2, 3, 4]),
+            opponentAlivePokemon: new Set([0, 1, 2, 3, 4])
+        };
         
         // Reset visuals
-        document.getElementById('player-pokemon-sprite').classList.remove('fainted');
-        document.getElementById('opponent-pokemon-sprite').classList.remove('fainted');
+        this.resetFaintedVisuals();
         document.getElementById('battle-log').innerHTML = '';
         
+        // Reset to first Pokemon in team
+        this.battleState.playerPokemon = this.battleState.playerTeam[0];
+        this.battleState.opponentPokemon = this.battleState.opponentTeam[0];
+        
+        this.updatePokemonSprites();
+        this.updateTeamPanel();
         this.updateUI();
         this.enableControls();
         this.startBattle();
@@ -488,14 +856,25 @@ showBattleResult(playerWon) {
     }
 
     disableControls() {
-        document.querySelectorAll('.attack-btn, .action-btn').forEach(btn => {
+        console.log("Disabling controls");
+        document.querySelectorAll('.attack-btn, .action-btn, #switch-btn').forEach(btn => {
             btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
         });
     }
 
     enableControls() {
-        document.querySelectorAll('.attack-btn, .action-btn').forEach(btn => {
+        if (!this.battleState.battleActive || !this.battleState.playerTurn) {
+            console.log("Not enabling controls: battleActive=", this.battleState.battleActive, "playerTurn=", this.battleState.playerTurn);
+            return;
+        }
+        
+        console.log("Enabling controls");
+        document.querySelectorAll('.attack-btn, .action-btn, #switch-btn').forEach(btn => {
             btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
         });
     }
 
@@ -519,594 +898,228 @@ vfxStyle.textContent = `
         0% { transform: scale(0); opacity: 1; }
         100% { transform: scale(2); opacity: 0; }
     }
+    
+    /* Team Panel Styles */
+    .team-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 15px;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 10px;
+        margin: 10px;
+        max-width: 250px;
+    }
+    
+    .team-pokemon {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .team-pokemon:hover:not(.fainted) {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+    }
+    
+    .team-pokemon.active {
+        border-color: #4cd964;
+        background: rgba(76, 217, 100, 0.2);
+    }
+    
+    .team-pokemon.fainted {
+        opacity: 0.5;
+        filter: grayscale(1);
+        cursor: not-allowed;
+    }
+    
+    .team-pokemon.player.active {
+        border-color: #4cd964;
+    }
+    
+    .team-pokemon.opponent.active {
+        border-color: #ff4444;
+    }
+    
+    .team-pokemon-sprite {
+        width: 40px;
+        height: 40px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+    
+    .team-pokemon-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    .team-pokemon-name {
+        font-weight: bold;
+        color: white;
+        font-size: 14px;
+    }
+    
+    .team-pokemon-type {
+        font-size: 12px;
+        color: #aaa;
+    }
+    
+    .active-indicator {
+        margin-left: auto;
+        font-size: 18px;
+        color: #ffcc00;
+    }
+    
+    /* Switch Menu Styles */
+    .switch-menu {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.9);
+        border: 3px solid #4cd964;
+        border-radius: 15px;
+        padding: 20px;
+        z-index: 1000;
+        min-width: 300px;
+        display: none;
+    }
+    
+    .switch-header {
+        text-align: center;
+        margin-bottom: 15px;
+        color: white;
+        font-size: 18px;
+        border-bottom: 2px solid #4cd964;
+        padding-bottom: 10px;
+    }
+    
+    .switch-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .switch-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .switch-item:hover {
+        background: rgba(76, 217, 100, 0.3);
+        transform: scale(1.02);
+    }
+    
+    .switch-sprite {
+        width: 50px;
+        height: 50px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+    
+    .switch-info {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .switch-name {
+        font-weight: bold;
+        color: white;
+        font-size: 16px;
+    }
+    
+    .switch-type {
+        font-size: 14px;
+        color: #aaa;
+    }
+    
+    /* Close button for switch menu */
+    .switch-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+    }
+    
+    /* Entry Animation for New Pokemon */
+    @keyframes pokemonEntry {
+        0% { 
+            transform: scale(0) translateY(-50px);
+            opacity: 0;
+        }
+        70% {
+            transform: scale(1.1) translateY(5px);
+            opacity: 1;
+        }
+        100% {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    .pokemon-entry {
+        animation: pokemonEntry 0.6s ease-out forwards;
+    }
+    
+    /* Battle Controls Styling */
+    .attack-btn, .action-btn, #switch-btn {
+        transition: all 0.3s ease;
+    }
+    
+    .attack-btn:disabled, .action-btn:disabled, #switch-btn:disabled {
+        opacity: 0.5 !important;
+        cursor: not-allowed !important;
+        transform: none !important;
+    }
+    
+    .attack-btn:not(:disabled):hover, .action-btn:not(:disabled):hover, #switch-btn:not(:disabled):hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
 `;
 document.head.appendChild(vfxStyle);
 
 // Initialize battle when page loads
 document.addEventListener('DOMContentLoaded', () => {
     new PokemonBattle();
-});
-// Battle VFX System
-class BattleVFX {
-    constructor() {
-        this.vfxContainer = null;
-        this.initVFXContainer();
-    }
-
-    initVFXContainer() {
-        this.vfxContainer = document.createElement('div');
-        this.vfxContainer.className = 'vfx-container';
-        document.querySelector('.battle-container').appendChild(this.vfxContainer);
-    }
-
-    // Quick Attack VFX
-    createQuickAttack(startX, startY, isHit) {
-        const vfx = document.createElement('div');
-        vfx.className = 'vfx-quick-attack';
-        vfx.style.left = startX + 'px';
-        vfx.style.top = startY + 'px';
-        
-        this.vfxContainer.appendChild(vfx);
-        
-        // Add particles
-        if (isHit) {
-            this.createParticles(startX + 100, startY, 5, 'rgba(200,200,255,0.8)');
-        }
-        
-        setTimeout(() => {
-            vfx.remove();
-        }, 600);
-    }
-
-    // Super Attack VFX
-    createSuperAttack(x, y, isHit) {
-        const vfx = document.createElement('div');
-        vfx.className = 'vfx-super-attack';
-        vfx.style.left = (x - 60) + 'px';
-        vfx.style.top = (y - 60) + 'px';
-        
-        this.vfxContainer.appendChild(vfx);
-        
-        // Add explosion particles
-        if (isHit) {
-            this.createParticles(x, y, 12, 'rgba(255,100,100,0.9)');
-            this.createScreenShake();
-        }
-        
-        setTimeout(() => {
-            vfx.remove();
-        }, 800);
-    }
-
-    // Combo Attack VFX
-    createComboAttack(x, y, isHit) {
-        for (let i = 0; i < 3; i++) {
-            setTimeout(() => {
-                const vfx = document.createElement('div');
-                vfx.className = 'vfx-combo-attack';
-                vfx.style.left = (x - 50 + Math.random() * 40 - 20) + 'px';
-                vfx.style.top = (y - 50 + Math.random() * 40 - 20) + 'px';
-                vfx.style.animationDelay = (i * 0.1) + 's';
-                
-                this.vfxContainer.appendChild(vfx);
-                
-                if (isHit && i === 1) {
-                    this.createParticles(x, y, 8, 'rgba(150,50,255,0.8)');
-                    this.createScreenShake();
-                }
-                
-                setTimeout(() => {
-                    vfx.remove();
-                }, 1000);
-            }, i * 150);
-        }
-    }
-
-    // Hit/Miss VFX
-    createHitEffect(x, y, isCritical = false) {
-        const hit = document.createElement('div');
-        hit.className = 'vfx-hit';
-        hit.style.left = (x - 30) + 'px';
-        hit.style.top = (y - 30) + 'px';
-        
-        if (isCritical) {
-            hit.style.background = 'radial-gradient(circle, rgba(255,255,0,0.9) 0%, rgba(255,150,0,0.8) 30%, rgba(255,100,0,0.6) 60%, transparent 80%)';
-            hit.style.filter = 'blur(1px) brightness(3)';
-        }
-        
-        this.vfxContainer.appendChild(hit);
-        
-        setTimeout(() => {
-            hit.remove();
-        }, 400);
-    }
-
-    createMissEffect(x, y) {
-        const miss = document.createElement('div');
-        miss.className = 'vfx-miss';
-        miss.style.left = (x - 40) + 'px';
-        miss.style.top = (y - 40) + 'px';
-        
-        this.vfxContainer.appendChild(miss);
-        
-        setTimeout(() => {
-            miss.remove();
-        }, 600);
-    }
-
-    // Damage Text
-    createDamageText(x, y, damage, isCritical = false, isMiss = false) {
-        const text = document.createElement('div');
-        text.className = 'damage-text';
-        text.textContent = isMiss ? 'MISS!' : damage;
-        
-        if (isCritical) {
-            text.className += ' critical';
-        } else if (isMiss) {
-            text.className += ' miss';
-        } else {
-            text.className += ' hit';
-        }
-        
-        text.style.left = x + 'px';
-        text.style.top = y + 'px';
-        
-        this.vfxContainer.appendChild(text);
-        
-        setTimeout(() => {
-            text.remove();
-        }, 1000);
-    }
-
-    // Particle System
-    createParticles(x, y, count, color) {
-        for (let i = 0; i < count; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.style.left = x + 'px';
-            particle.style.top = y + 'px';
-            particle.style.backgroundColor = color;
-            particle.style.width = (Math.random() * 8 + 4) + 'px';
-            particle.style.height = particle.style.width;
-            
-            // Random direction and distance
-            const angle = Math.random() * Math.PI * 2;
-            const distance = Math.random() * 60 + 30;
-            const tx = Math.cos(angle) * distance;
-            const ty = Math.sin(angle) * distance;
-            
-            particle.style.setProperty('--tx', tx + 'px');
-            particle.style.setProperty('--ty', ty + 'px');
-            
-            this.vfxContainer.appendChild(particle);
-            
-            setTimeout(() => {
-                particle.remove();
-            }, 1000);
-        }
-    }
-
-    // Screen Shake
-    createScreenShake() {
-        const battleContainer = document.querySelector('.battle-container');
-        battleContainer.classList.add('screen-shake');
-        
-        setTimeout(() => {
-            battleContainer.classList.remove('screen-shake');
-        }, 300);
-    }
-
-    // Pokemon Hit Flash
-    createPokemonHitFlash(pokemonElement) {
-        pokemonElement.classList.add('pokemon-hit-flash');
-        
-        setTimeout(() => {
-            pokemonElement.classList.remove('pokemon-hit-flash');
-        }, 300);
-    }
-
-    // Clear all VFX
-    clearVFX() {
-        this.vfxContainer.innerHTML = '';
-    }
-}
-
-// Initialize VFX System
-const battleVFX = new BattleVFX();
-
-// Updated Battle Attack Function with VFX
-function performAttack(attackType) {
-    const playerPokemon = document.querySelector('.player-pokemon .pokemon-sprite');
-    const opponentPokemon = document.querySelector('.opponent-pokemon .pokemon-sprite');
     
-    // Get positions for VFX
-    const playerRect = playerPokemon.getBoundingClientRect();
-    const opponentRect = opponentPokemon.getBoundingClientRect();
-    
-    const playerX = playerRect.left + playerRect.width / 2;
-    const playerY = playerRect.top + playerRect.height / 2;
-    const opponentX = opponentRect.left + opponentRect.width / 2;
-    const opponentY = opponentRect.top + opponentRect.height / 2;
-    
-    // Calculate hit chance (80% base chance)
-    const hitChance = Math.random();
-    const isHit = hitChance < 0.8;
-    const isCritical = isHit && Math.random() < 0.2;
-    
-    // Player attack animation
-    playerPokemon.classList.add('attacking');
-    
-    setTimeout(() => {
-        playerPokemon.classList.remove('attacking');
-        
-        // Create attack VFX based on type
-        switch(attackType) {
-            case 'normal':
-                battleVFX.createQuickAttack(playerX, playerY, isHit);
-                break;
-            case 'special':
-                battleVFX.createSuperAttack(opponentX, opponentY, isHit);
-                break;
-            case 'critical':
-                battleVFX.createComboAttack(opponentX, opponentY, isHit);
-                break;
-        }
-        
-        if (isHit) {
-            // Hit VFX
-            setTimeout(() => {
-                battleVFX.createHitEffect(opponentX, opponentY, isCritical);
-                battleVFX.createPokemonHitFlash(opponentPokemon);
-                
-                // Damage calculation
-                const baseDamage = attackType === 'normal' ? 20 : 
-                                 attackType === 'special' ? 35 : 50;
-                const damage = isCritical ? Math.floor(baseDamage * 1.5) : baseDamage;
-                
-                // Show damage text
-                battleVFX.createDamageText(opponentX, opponentY, damage, isCritical);
-                
-                // Update health bar
-                updateOpponentHealth(damage);
-                
-                // Add to battle log
-                addToBattleLog(`Hit! ${getCurrentPokemonName()} dealt ${damage} damage${isCritical ? ' (CRITICAL!)' : ''}`);
-                
-            }, 300);
-        } else {
-            // Miss VFX
-            setTimeout(() => {
-                battleVFX.createMissEffect(opponentX, opponentY);
-                battleVFX.createDamageText(opponentX, opponentY, 0, false, true);
-                addToBattleLog(`${getCurrentPokemonName()} missed the attack!`);
-            }, 300);
-        }
-        
-        // Opponent counter attack after delay
-        setTimeout(() => {
-            performOpponentAttack();
-        }, 1500);
-        
-    }, 500);
-}
-
-// Opponent Attack with VFX
-function performOpponentAttack() {
-    const playerPokemon = document.querySelector('.player-pokemon .pokemon-sprite');
-    const opponentPokemon = document.querySelector('.opponent-pokemon .pokemon-sprite');
-    
-    const playerRect = playerPokemon.getBoundingClientRect();
-    const opponentRect = opponentPokemon.getBoundingClientRect();
-    
-    const playerX = playerRect.left + playerRect.width / 2;
-    const playerY = playerRect.top + playerRect.height / 2;
-    const opponentX = opponentRect.left + opponentRect.width / 2;
-    const opponentY = opponentRect.top + opponentRect.height / 2;
-    
-    // Opponent attack choices
-    const attacks = ['normal', 'special', 'critical'];
-    const opponentAttack = attacks[Math.floor(Math.random() * attacks.length)];
-    
-    // Hit chance for opponent (75% base chance)
-    const hitChance = Math.random();
-    const isHit = hitChance < 0.75;
-    const isCritical = isHit && Math.random() < 0.15;
-    
-    // Opponent attack animation
-    opponentPokemon.classList.add('attacking');
-    
-    setTimeout(() => {
-        opponentPokemon.classList.remove('attacking');
-        
-        // Create opponent attack VFX
-        switch(opponentAttack) {
-            case 'normal':
-                battleVFX.createQuickAttack(opponentX, opponentY, isHit);
-                break;
-            case 'special':
-                battleVFX.createSuperAttack(playerX, playerY, isHit);
-                break;
-            case 'critical':
-                battleVFX.createComboAttack(playerX, playerY, isHit);
-                break;
-        }
-        
-        if (isHit) {
-            setTimeout(() => {
-                battleVFX.createHitEffect(playerX, playerY, isCritical);
-                battleVFX.createPokemonHitFlash(playerPokemon);
-                
-                const baseDamage = opponentAttack === 'normal' ? 15 : 
-                                 opponentAttack === 'special' ? 30 : 40;
-                const damage = isCritical ? Math.floor(baseDamage * 1.5) : baseDamage;
-                
-                battleVFX.createDamageText(playerX, playerY, damage, isCritical);
-                updatePlayerHealth(damage);
-                
-                addToBattleLog(`Opponent's ${getOpponentAttackName(opponentAttack)} hit for ${damage} damage${isCritical ? ' (CRITICAL!)' : ''}`);
-                
-            }, 300);
-        } else {
-            setTimeout(() => {
-                battleVFX.createMissEffect(playerX, playerY);
-                battleVFX.createDamageText(playerX, playerY, 0, false, true);
-                addToBattleLog(`Opponent's attack missed!`);
-            }, 300);
-        }
-        
-    }, 500);
-}
-
-// Helper functions
-function getCurrentPokemonName() {
-    return document.querySelector('.player-health .pokemon-name').textContent;
-}
-
-function getOpponentAttackName(attackType) {
-    const names = {
-        'normal': 'Quick Attack',
-        'special': 'Super Attack', 
-        'critical': 'Combo'
-    };
-    return names[attackType];
-}
-
-// Initialize attack buttons
-function initializeAttackButtons() {
-    const attackButtons = document.querySelectorAll('.attack-btn');
-    
-    attackButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const attackType = this.dataset.type;
-            performAttack(attackType);
-            
-            // Disable buttons during attack sequence
-            attackButtons.forEach(btn => btn.disabled = true);
-            setTimeout(() => {
-                attackButtons.forEach(btn => btn.disabled = false);
-            }, 2500);
-        });
+    // Add close button functionality for switch menu
+    const closeSwitch = document.createElement('button');
+    closeSwitch.className = 'switch-close';
+    closeSwitch.innerHTML = '✕';
+    closeSwitch.addEventListener('click', () => {
+        document.getElementById('switch-menu').style.display = 'none';
     });
-}
-
-// Call this when battle starts
-initializeAttackButtons();
-
-// Multiplayer Battle System
-class MultiplayerBattle {
-    constructor() {
-        this.socket = io();
-        this.roomId = null;
-        this.battleData = null;
-        this.isMultiplayer = false;
-        
-        this.initializeMultiplayer();
-    }
-
-    initializeMultiplayer() {
-        // Check if this is a multiplayer battle
-        const urlParams = new URLSearchParams(window.location.search);
-        const mode = urlParams.get('mode');
-        this.roomId = urlParams.get('room');
-        
-        if (mode === 'multiplayer' && this.roomId) {
-            this.isMultiplayer = true;
-            this.setupMultiplayer();
-        } else {
-            // Single player battle
-            new PokemonBattle();
+    document.getElementById('switch-menu').appendChild(closeSwitch);
+    
+    // Close switch menu when clicking outside
+    document.addEventListener('click', (e) => {
+        const switchMenu = document.getElementById('switch-menu');
+        if (switchMenu.style.display === 'block' && !switchMenu.contains(e.target) && 
+            !document.getElementById('switch-btn').contains(e.target)) {
+            switchMenu.style.display = 'none';
         }
-    }
-
-    setupMultiplayer() {
-        console.log('Initializing multiplayer battle for room:', this.roomId);
-        
-        // Show multiplayer status
-        document.getElementById('multiplayer-status').style.display = 'block';
-        document.getElementById('battle-room-id').textContent = this.roomId;
-        
-        // Get battle data from localStorage or server
-        const savedBattleData = localStorage.getItem('battleData');
-        if (savedBattleData) {
-            this.battleData = JSON.parse(savedBattleData);
-            this.initializeBattleFromData();
-        } else {
-            // Request battle data from server
-            this.socket.emit('getRoomInfo', this.roomId);
-        }
-
-        this.setupSocketEvents();
-    }
-
-    setupSocketEvents() {
-        // Battle events from server
-        this.socket.on('attackResult', (data) => {
-            this.handleOpponentAttack(data);
-        });
-
-        this.socket.on('battleActionUpdate', (data) => {
-            this.handleBattleAction(data);
-        });
-
-        this.socket.on('playerLeft', (data) => {
-            this.handlePlayerLeft(data);
-        });
-
-        this.socket.on('roomInfo', (data) => {
-            if (!data.error) {
-                this.battleData = data;
-                this.initializeBattleFromData();
-            }
-        });
-
-        this.socket.on('error', (data) => {
-            console.error('Battle error:', data);
-            this.addToLog(`Error: ${data.message}`);
-        });
-    }
-
-    initializeBattleFromData() {
-        if (!this.battleData) return;
-
-        // Determine if current player is player1 or player2
-        const currentPlayerId = this.socket.id;
-        let isPlayer1 = false;
-        
-        if (this.battleData.players) {
-            isPlayer1 = this.battleData.players[0].id === currentPlayerId;
-        } else if (this.battleData.player1 && this.battleData.player2) {
-            isPlayer1 = this.battleData.player1.id === currentPlayerId;
-        }
-
-        // Initialize battle state
-        this.battleState = {
-            isMultiplayer: true,
-            isPlayer1: isPlayer1,
-            playerPokemon: null,
-            opponentPokemon: null,
-            playerHealth: 100,
-            opponentHealth: 100,
-            playerMaxHealth: 100,
-            opponentMaxHealth: 100,
-            battleActive: true,
-            playerTurn: isPlayer1, // Player 1 goes first
-            battleLog: [],
-            roomId: this.roomId
-        };
-
-        this.setupPlayers();
-        this.setupEventListeners();
-        this.startMultiplayerBattle();
-    }
-
-    setupPlayers() {
-        // Set player and opponent based on multiplayer data
-        if (this.battleState.isPlayer1) {
-            this.battleState.playerPokemon = this.getPokemonData(this.battleData.player1.pokemon);
-            this.battleState.opponentPokemon = this.getPokemonData(this.battleData.player2.pokemon);
-            
-            document.getElementById('player-name').textContent = this.battleData.player1.name;
-            document.getElementById('opponent-name').textContent = this.battleData.player2.name;
-        } else {
-            this.battleState.playerPokemon = this.getPokemonData(this.battleData.player2.pokemon);
-            this.battleState.opponentPokemon = this.getPokemonData(this.battleData.player1.pokemon);
-            
-            document.getElementById('player-name').textContent = this.battleData.player2.name;
-            document.getElementById('opponent-name').textContent = this.battleData.player1.name;
-        }
-
-        // Set up Pokemon sprites and info
-        this.initializePokemonVisuals();
-    }
-
-    initializePokemonVisuals() {
-        // Player Pokemon
-        document.getElementById('player-pokemon-sprite').style.backgroundImage = 
-            `url('${this.battleState.playerPokemon.gif}')`;
-        document.getElementById('player-pokemon-name').textContent = this.battleState.playerPokemon.name;
-
-        // Opponent Pokemon
-        document.getElementById('opponent-pokemon-sprite').style.backgroundImage = 
-            `url('${this.battleState.opponentPokemon.gif}')`;
-        document.getElementById('opponent-pokemon-name').textContent = this.battleState.opponentPokemon.name;
-
-        // Calculate stats
-        this.battleState.playerMaxHealth = this.calculateHealth(this.battleState.playerPokemon);
-        this.battleState.opponentMaxHealth = this.calculateHealth(this.battleState.opponentPokemon);
-        this.battleState.playerHealth = this.battleState.playerMaxHealth;
-        this.battleState.opponentHealth = this.battleState.opponentMaxHealth;
-
-        this.updateHealthBars();
-    }
-
-    startMultiplayerBattle() {
-        this.addToLog(`Multiplayer battle started!`);
-        this.addToLog(`You are facing ${this.battleState.isPlayer1 ? this.battleData.player2.name : this.battleData.player1.name}!`);
-        
-        if (this.battleState.playerTurn) {
-            this.addToLog(`Your turn first!`);
-            this.enableControls();
-        } else {
-            this.addToLog(`Waiting for opponent's turn...`);
-            this.disableControls();
-        }
-    }
-
-    // Override player attack for multiplayer
-    playerAttack(attackType) {
-        if (!this.battleState.battleActive || !this.battleState.playerTurn) return;
-
-        this.battleState.playerTurn = false;
-        this.disableControls();
-
-        const damage = this.calculateDamage(attackType, true);
-        const isCritical = this.isCriticalHit(attackType);
-        const finalDamage = isCritical ? Math.floor(damage * 1.5) : damage;
-
-        // Send attack to server
-        this.socket.emit('playerAttack', {
-            moveType: attackType,
-            target: 'opponent',
-            damage: finalDamage,
-            roomId: this.roomId
-        });
-
-        // Local attack animation
-        this.animateAttack('player', attackType, isCritical);
-        
-        setTimeout(() => {
-            this.opponentTakeDamage(finalDamage, isCritical);
-            this.addToLog(`You used ${attackType} attack!`);
-        }, 600);
-    }
-
-    handleOpponentAttack(data) {
-        if (data.playerId === this.socket.id) return; // Ignore our own attacks
-
-        this.addToLog(`${data.playerName} used ${data.moveType} attack!`);
-        
-        this.animateAttack('opponent', data.moveType, false);
-        
-        setTimeout(() => {
-            this.playerTakeDamage(data.damage, false);
-            
-            // After opponent's attack, it becomes our turn
-            setTimeout(() => {
-                this.battleState.playerTurn = true;
-                this.enableControls();
-                this.addToLog(`Your turn!`);
-            }, 1000);
-        }, 600);
-    }
-
-    handlePlayerLeft(data) {
-        this.addToLog(`${data.playerName} left the battle. You win!`);
-        this.endBattle(true);
-    }
-
-}
-
-// Initialize appropriate battle type
-document.addEventListener('DOMContentLoaded', () => {
-    new MultiplayerBattle();
+    });
 });

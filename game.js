@@ -109,8 +109,6 @@ async function syncWithBlockchain() {
 
 
 
-
-
 function updateCoinsFromBattle(coinsEarned) {
     if (window.pokemonWeb3 && window.pokemonWeb3.isConnected) {
         // If MetaMask is connected, use blockchain for coins

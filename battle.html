@@ -107,7 +107,20 @@
             </div>
         </div>
     </div>
+<!-- Add these to your battle.html file -->
 
+<!-- Team Panels -->
+<div id="player-team-panel" class="team-panel" style="position: absolute; top: 100px; left: 20px;"></div>
+<div id="opponent-team-panel" class="team-panel" style="position: absolute; top: 100px; right: 20px;"></div>
+
+<!-- Switch Menu -->
+<div id="switch-menu" class="switch-menu">
+    <div class="switch-header">Switch Pokemon</div>
+    <div id="switch-list" class="switch-list"></div>
+</div>
+
+<!-- Add Switch Button to Battle Controls -->
+<button id="switch-btn" class="action-btn" style="display: none;">Switch Pokemon</button>
     <!-- Audio Elements -->
     <audio id="battle-music" loop>
         <source src="assets/audio/battle-music.mp3" type="audio/mpeg">
