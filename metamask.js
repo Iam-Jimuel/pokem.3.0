@@ -1,5 +1,4 @@
 // metamask.js - Complete Web3 Integration for Pokemon Game
-
 class PokemonWeb3 {
     constructor() {
         this.provider = null;
@@ -8,14 +7,12 @@ class PokemonWeb3 {
         this.connectedAddress = null;
         this.isConnected = false;
         
-        // Contract addresses
+        
         this.contractAddresses = {
-            pokemonToken: "0xYOUR_TOKEN_ADDRESS_HERE", // Replace after deploy
-            pokemonNFT: "0xYOUR_NFT_ADDRESS_HERE",     // Replace after deploy  
-            pokemonGame: "0xYOUR_GAME_ADDRESS_HERE"    // Replace after deploy
+            pokemonToken: "0x63257cd5864aeFdd162bc8437392292860FECa03", // token contract address
+            pokemonGame: "0x5940BfEd0e34d7720Cac7c5DA9b1D6F80c243B54"   // nft game contract address
         };
         
-        // Contract ABIs
         this.contractABIs = {
             pokemonToken: [
                 "function balanceOf(address) view returns (uint256)",
@@ -23,18 +20,18 @@ class PokemonWeb3 {
                 "function mintCoins(address to, uint256 amount)",
                 "function burnCoins(address from, uint256 amount)",
                 "function buyTokens() payable",
-                "function setGameContract(address _gameContract)"
-            ],
-            pokemonNFT: [
-                "function mintPokemon(address to, string name, string pokemonType, uint256 price, string tokenURI) returns (uint256)",
-                "function getPokemon(uint256 tokenId) view returns (tuple(uint256 id, string name, string pokemonType, uint256 price, uint256 level, uint256 experience, uint256 battlesWon, uint256 battlesLost))",
-                "function setGameContract(address _gameContract)"
+                "function setGameContract(address _gameContract)",
+                "function name() view returns (string)",
+                "function symbol() view returns (string)",
+                "function decimals() view returns (uint8)"
             ],
             pokemonGame: [
-                "function getStarterCoins()",
-                "function buyPokemon(string name, string pokemonType, string tokenURI) returns (uint256)",
                 "function battleWin(address player)",
-                "function battleLoss(address player)"
+                "function battleLoss(address player)",
+                "function battleEntryFee() view returns (uint256)",
+                "function winReward() view returns (uint256)",
+                "function lossPenalty() view returns (uint256)",
+                "function getBattleCount(address player) view returns (uint256 wins, uint256 losses)"
             ]
         };
         
@@ -43,26 +40,23 @@ class PokemonWeb3 {
 
     async init() {
         if (typeof window.ethereum !== 'undefined') {
-            console.log('MetaMask is installed!');
+            console.log('✅ MetaMask is installed!');
             this.provider = window.ethereum;
             
-            // Check if already connected
             const accounts = await this.provider.request({ method: 'eth_accounts' });
             if (accounts.length > 0) {
                 await this.handleAccountsChanged(accounts);
             }
             
-            // Listen for account changes
             this.provider.on('accountsChanged', (accounts) => {
                 this.handleAccountsChanged(accounts);
             });
             
-            this.provider.on('chainChanged', (chainId) => {
+            this.provider.on('chainChanged', () => {
                 window.location.reload();
             });
-            
         } else {
-            console.log('Please install MetaMask!');
+            console.log('❌ Please install MetaMask!');
             this.showMetaMaskPrompt();
         }
     }
@@ -75,7 +69,6 @@ class PokemonWeb3 {
             
             await this.handleAccountsChanged(accounts);
             return true;
-            
         } catch (error) {
             console.error('User rejected connection:', error);
             this.showConnectionError('User rejected wallet connection');
@@ -85,38 +78,27 @@ class PokemonWeb3 {
 
     async handleAccountsChanged(accounts) {
         if (accounts.length === 0) {
-            // User disconnected - RESET TO ZERO
             this.isConnected = false;
             this.connectedAddress = null;
             this.resetGameToZero();
-            this.updateUI();
         } else {
-            // User connected - SYNC WITH BLOCKCHAIN
             this.connectedAddress = accounts[0];
             this.isConnected = true;
             await this.setupContracts();
             await this.syncGameWithBlockchain();
-            this.updateUI();
         }
+        this.updateUI();
     }
 
     async setupContracts() {
         try {
-            // Load ethers.js
             const { ethers } = await import('https://cdn.ethers.io/lib/ethers-5.2.umd.min.js');
             this.provider = new ethers.providers.Web3Provider(window.ethereum);
             this.signer = this.provider.getSigner();
             
-            // Initialize contracts
             this.contracts.pokemonToken = new ethers.Contract(
                 this.contractAddresses.pokemonToken,
                 this.contractABIs.pokemonToken,
-                this.signer
-            );
-            
-            this.contracts.pokemonNFT = new ethers.Contract(
-                this.contractAddresses.pokemonNFT, 
-                this.contractABIs.pokemonNFT,
                 this.signer
             );
             
@@ -138,26 +120,19 @@ class PokemonWeb3 {
         if (!this.isConnected) return;
         
         try {
-            // Get token balance from blockchain
             const tokenBalance = await this.getTokenBalance();
             
-            // Update game state with REAL blockchain balance
             if (window.gameState) {
-                window.gameState.coins = parseInt(tokenBalance);
-                
-                // If balance is 0, clear owned Pokemon (they cost coins)
-                if (tokenBalance === 0) {
-                    window.gameState.ownedPokemon = [];
-                    window.gameState.selectedPokemon = null;
-                }
+                // Convert from wei to tokens (18 decimals)
+                const balanceInTokens = ethers.utils.formatUnits(tokenBalance, 18);
+                window.gameState.coins = Math.floor(parseFloat(balanceInTokens));
                 
                 // Update UI
                 if (window.updateUI) window.updateUI();
-                if (window.populatePokemonGrid) window.populatePokemonGrid();
                 if (window.updateCollectionInfo) window.updateCollectionInfo();
                 
-                console.log('🔄 Game synced with blockchain. Balance:', tokenBalance);
-                this.showNotification(`🔄 Synced with blockchain: ${tokenBalance} coins`);
+                console.log('🔄 Game synced with blockchain. Balance:', window.gameState.coins);
+                this.showNotification(`🔄 Synced: ${window.gameState.coins} POKE tokens`);
             }
         } catch (error) {
             console.error('Error syncing with blockchain:', error);
@@ -167,86 +142,21 @@ class PokemonWeb3 {
     resetGameToZero() {
         if (window.gameState) {
             window.gameState.coins = 0;
-            window.gameState.ownedPokemon = [];
-            window.gameState.selectedPokemon = null;
-            
             if (window.updateUI) window.updateUI();
-            if (window.populatePokemonGrid) window.populatePokemonGrid();
-            if (window.updateCollectionInfo) window.updateCollectionInfo();
-            if (window.saveGameState) window.saveGameState();
-            
             console.log('🔄 Game reset to zero (wallet disconnected)');
         }
     }
 
     async getTokenBalance() {
         try {
-            if (this.contracts.pokemonToken) {
+            if (this.contracts.pokemonToken && this.connectedAddress) {
                 const balance = await this.contracts.pokemonToken.balanceOf(this.connectedAddress);
-                return ethers.utils.formatEther(balance);
+                return balance;
             }
-            return '0';
+            return ethers.constants.Zero;
         } catch (error) {
             console.error('Error getting token balance:', error);
-            return '0';
-        }
-    }
-
-    async getStarterCoins() {
-        if (!this.isConnected) {
-            this.showConnectionError('Please connect your wallet first');
-            return false;
-        }
-
-        try {
-            const tx = await this.contracts.pokemonGame.getStarterCoins();
-            await tx.wait();
-            
-            // Sync balance after transaction
-            await this.syncGameWithBlockchain();
-            
-            this.showTransactionSuccess('🎉 Received 500 starter coins!');
-            return true;
-        } catch (error) {
-            console.error('Error getting starter coins:', error);
-            this.showTransactionError('Failed to get starter coins');
-            return false;
-        }
-    }
-
-    async buyPokemon(pokemonId, price) {
-        if (!this.isConnected) {
-            this.showConnectionError('Please connect your wallet first');
-            return false;
-        }
-
-        try {
-            const pokemon = window.pokemonData.find(p => p.id === pokemonId);
-            if (!pokemon) return false;
-
-            // Call game contract to buy Pokemon
-            const tx = await this.contracts.pokemonGame.buyPokemon(
-                pokemon.name,
-                pokemon.type,
-                pokemon.gif
-            );
-            
-            await tx.wait();
-            
-            // Sync after purchase
-            await this.syncGameWithBlockchain();
-            
-            this.showTransactionSuccess(`🎉 Purchased ${pokemon.name}!`);
-            return true;
-        } catch (error) {
-            console.error('Error buying Pokemon:', error);
-            
-            if (error.message.includes('insufficient balance')) {
-                this.showTransactionError('Not enough coins to buy this Pokemon');
-            } else {
-                this.showTransactionError('Failed to purchase Pokemon');
-            }
-            return false;
+            return ethers.constants.Zero;
         }
     }
 
@@ -262,14 +172,90 @@ class PokemonWeb3 {
             });
             await tx.wait();
             
-            // Sync balance after purchase
             await this.syncGameWithBlockchain();
             
-            this.showTransactionSuccess(`💰 Purchased ${ethAmount * 100} POKE tokens!`);
+            const tokens = ethAmount * 100;
+            this.showTransactionSuccess(`💰 Purchased ${tokens} POKE tokens!`);
             return true;
         } catch (error) {
             console.error('Error buying tokens:', error);
             this.showTransactionError('Failed to buy tokens');
+            return false;
+        }
+    }
+
+    // REAL BATTLE FUNCTIONS - ACTUAL BLOCKCHAIN TRANSACTIONS
+    async processBattleWin() {
+        if (!this.isConnected) {
+            this.showConnectionError('Please connect your wallet first');
+            return false;
+        }
+
+        try {
+            const tx = await this.contracts.pokemonGame.battleWin(this.connectedAddress);
+            await tx.wait();
+            
+            await this.syncGameWithBlockchain();
+            
+            this.showTransactionSuccess('🎉 You won 100 POKE tokens!');
+            return true;
+        } catch (error) {
+            console.error('Error processing win:', error);
+            this.showTransactionError('Failed to process battle win');
+            return false;
+        }
+    }
+
+    async processBattleLoss() {
+        if (!this.isConnected) {
+            this.showConnectionError('Please connect your wallet first');
+            return false;
+        }
+
+        try {
+            const tx = await this.contracts.pokemonGame.battleLoss(this.connectedAddress);
+            await tx.wait();
+            
+            await this.syncGameWithBlockchain();
+            
+            this.showTransactionSuccess('💸 Lost 25 POKE tokens from defeat');
+            return true;
+        } catch (error) {
+            console.error('Error processing loss:', error);
+            this.showTransactionError('Failed to process battle loss');
+            return false;
+        }
+    }
+
+    async payBattleEntryFee() {
+        if (!this.isConnected) {
+            this.showConnectionError('Please connect your wallet first');
+            return false;
+        }
+
+        try {
+            // Check if player has enough tokens
+            const balance = await this.getTokenBalance();
+            const entryFee = ethers.utils.parseUnits("50", 18); // 50 tokens
+            
+            if (balance.lt(entryFee)) {
+                this.showTransactionError('Not enough POKE tokens for battle entry (need 50)');
+                return false;
+            }
+            
+            // Approve game contract to spend tokens
+            const approveTx = await this.contracts.pokemonToken.approve(
+                this.contractAddresses.pokemonGame,
+                entryFee
+            );
+            await approveTx.wait();
+            
+            // The actual deduction will happen in battleLoss() function
+            this.showTransactionSuccess('✅ Battle entry fee approved');
+            return true;
+        } catch (error) {
+            console.error('Error paying entry fee:', error);
+            this.showTransactionError('Failed to pay battle entry fee');
             return false;
         }
     }
@@ -302,23 +288,23 @@ class PokemonWeb3 {
 
     async loadWalletBalance() {
         try {
-            const balance = await this.provider.request({
+            const ethBalance = await this.provider.request({
                 method: 'eth_getBalance',
                 params: [this.connectedAddress, 'latest']
             });
             
-            const balanceInEth = parseInt(balance) / 1e18;
-            const balanceElement = document.getElementById('wallet-balance');
+            const tokenBalance = await this.getTokenBalance();
+            const tokenBalanceFormatted = ethers.utils.formatUnits(tokenBalance, 18);
             
+            const balanceElement = document.getElementById('wallet-balance');
             if (balanceElement) {
-                balanceElement.textContent = `${balanceInEth.toFixed(4)} ETH`;
+                balanceElement.textContent = `${parseFloat(tokenBalanceFormatted).toFixed(2)} POKE`;
             }
         } catch (error) {
             console.error('Error loading balance:', error);
         }
     }
 
-    // UI Helper Methods
     showMetaMaskPrompt() {
         const notification = document.createElement('div');
         notification.className = 'web3-notification error';

@@ -51,7 +51,7 @@ const pokemonData = [
 // Game State
 let gameState = {
     playerName: "Jim",
-    coins: 0, // 0
+    coins: 0,
     selectedPokemon: 20,
     ownedPokemon: [1, 4, 6, 8, 10, 13, 16, 19, 21, 23, 25, 27, 29, 32, 35, 37, 39, 41, 43, 45],
     currentAvatar: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/trainers/1.png",
